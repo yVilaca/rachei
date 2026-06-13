@@ -1,0 +1,85 @@
+export type UserPlan = 'free' | 'pro'
+export type MemberRole = 'admin' | 'member'
+export type SplitType = 'equal' | 'custom'
+export type InstallmentStatus = 'pending' | 'awaiting_confirmation' | 'paid'
+
+export interface User {
+  id: string
+  name: string
+  email: string
+  phone?: string
+  avatarUrl?: string
+  plan: UserPlan
+  createdAt: string
+}
+
+export interface Group {
+  id: string
+  name: string
+  createdBy: string
+  members: GroupMember[]
+  createdAt: string
+  archived: boolean
+}
+
+export interface GroupMember {
+  userId: string
+  groupId: string
+  role: MemberRole
+  joinedAt: string
+  user: User
+}
+
+export interface Debt {
+  id: string
+  groupId: string
+  description: string
+  totalAmount: number
+  paidByUserId: string
+  splitType: SplitType
+  createdBy: string
+  createdAt: string
+  installments: Installment[]
+}
+
+export interface Installment {
+  id: string
+  debtId: string
+  debtorUserId: string
+  amount: number
+  status: InstallmentStatus
+  paidAt?: string
+  confirmedAt?: string
+  proof?: PaymentProof
+  chargeLink?: ChargeLink
+  debtor: User
+}
+
+export interface PaymentProof {
+  id: string
+  installmentId: string
+  fileUrl: string
+  uploadedAt: string
+}
+
+export interface ChargeLink {
+  id: string
+  installmentId: string
+  token: string
+  expiresAt: string
+  usedAt?: string
+}
+
+export interface NewDebtInput {
+  groupId: string
+  description: string
+  totalAmount: number
+  paidByUserId: string
+  splitType: SplitType
+  debtors: { userId: string; amount: number }[]
+}
+
+export interface FriendBalance {
+  user: User
+  balance: number // positive = they owe me, negative = I owe them
+}

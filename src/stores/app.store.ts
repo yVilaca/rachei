@@ -28,14 +28,19 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       splitType: input.splitType,
       createdBy: input.paidByUserId,
       createdAt: new Date().toISOString(),
-      installments: input.debtors.map((d, i) => ({
-        id: `inst-${Date.now()}-${i}`,
-        debtId: id,
-        debtorUserId: d.userId,
-        amount: d.amount,
-        status: 'pending' as InstallmentStatus,
-        debtor: MOCK_USERS.find((u) => u.id === d.userId)!,
-      })),
+      installments: input.debtors.map((d, i) => {
+        const isSelf = d.userId === input.paidByUserId
+        return {
+          id: `inst-${Date.now()}-${i}`,
+          debtId: id,
+          debtorUserId: d.userId,
+          amount: d.amount,
+          status: (isSelf ? 'paid' : 'pending') as InstallmentStatus,
+          paidAt: isSelf ? new Date().toISOString() : undefined,
+          confirmedAt: isSelf ? new Date().toISOString() : undefined,
+          debtor: MOCK_USERS.find((u) => u.id === d.userId)!,
+        }
+      }),
     }
     set((state) => ({ debts: [...state.debts, newDebt] }))
   },

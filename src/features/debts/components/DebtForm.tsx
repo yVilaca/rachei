@@ -20,19 +20,20 @@ export default function DebtForm({ groupId }: DebtFormProps) {
   const { groups, addDebt } = useAppStore()
 
   const group = groups.find((g) => g.id === groupId)!
-  const otherMembers = group.members.filter((m) => m.userId !== currentUser?.id)
 
   const [amountDisplay, setAmountDisplay] = useState('')
   const [description, setDescription] = useState('')
   const [paidByUserId, setPaidByUserId] = useState(currentUser?.id ?? '')
-  const [selectedDebtors, setSelectedDebtors] = useState<string[]>(otherMembers.map((m) => m.userId))
+  // All members selected by default (including the payer — their share is auto-marked paid)
+  const [selectedDebtors, setSelectedDebtors] = useState<string[]>(group.members.map((m) => m.userId))
   const [splitType, setSplitType] = useState<SplitType>('equal')
   const [customAmounts, setCustomAmounts] = useState<Record<string, number>>({})
   const [error, setError] = useState('')
 
   const total = parseFloat(amountDisplay.replace(',', '.')) || 0
 
-  const eligibleDebtors = group.members.filter((m) => m.userId !== paidByUserId)
+  // All members are eligible — payer can include their own share
+  const eligibleDebtors = group.members
 
   const debtorRows = eligibleDebtors.map((m) => {
     const isSelected = selectedDebtors.includes(m.userId)
@@ -150,7 +151,6 @@ export default function DebtForm({ groupId }: DebtFormProps) {
                 type="button"
                 onClick={() => {
                   setPaidByUserId(m.userId)
-                  setSelectedDebtors((prev) => prev.filter((id) => id !== m.userId))
                 }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 7,
@@ -208,9 +208,20 @@ export default function DebtForm({ groupId }: DebtFormProps) {
               }}>
                 {d.initials}
               </div>
-              <span style={{ flex: 1, fontWeight: 700, fontSize: 14.5, color: '#1A1A1F' }}>
-                {d.name.split(' ')[0]}
-              </span>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                <span style={{ fontWeight: 700, fontSize: 14.5, color: '#1A1A1F' }}>
+                  {d.name.split(' ')[0]}
+                </span>
+                {d.userId === paidByUserId && (
+                  <span style={{
+                    fontSize: 10, fontWeight: 800, color: '#0E8F5C',
+                    background: '#E9F9F0', padding: '2px 7px', borderRadius: 999,
+                    whiteSpace: 'nowrap',
+                  }}>
+                    minha parte
+                  </span>
+                )}
+              </div>
               {d.isSelected && splitType === 'equal' && total > 0 && (
                 <span style={{ fontWeight: 800, fontSize: 14, color: '#11A36B' }}>
                   R$ {(d.equalShare).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}

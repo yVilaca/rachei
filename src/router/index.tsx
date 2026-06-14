@@ -4,6 +4,7 @@ import AppShell from './AppShell'
 import AuthPage from '../features/auth/AuthPage'
 import DashboardPage from '../features/dashboard/DashboardPage'
 import GroupPage from '../features/groups/GroupPage'
+import GroupsPage from '../features/groups/GroupsPage'
 import NewDebtPage from '../features/debts/NewDebtPage'
 import DebtDetailPage from '../features/debts/DebtDetailPage'
 import PaymentLinkPage from '../features/payment/PaymentLinkPage'
@@ -20,6 +21,7 @@ export const router = createBrowserRouter([
     element: <PrivateRoute><AppShell /></PrivateRoute>,
     children: [
       { path: '/dashboard', element: <DashboardPage /> },
+      { path: '/grupos', element: <GroupsPage /> },
       { path: '/grupos/:id', element: <GroupPage /> },
       { path: '/atividade', element: <ActivityPage /> },
       { path: '/perfil', element: <ProfilePage /> },

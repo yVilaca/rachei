@@ -9,7 +9,7 @@ export default function BottomNav() {
   const params = useParams<{ id?: string }>()
 
   const isHome = pathname === '/dashboard'
-  const isGroups = pathname.startsWith('/grupos')
+  const isGroups = pathname === '/grupos' || pathname.startsWith('/grupos/')
   const isActivity = pathname === '/atividade'
   const isProfile = pathname === '/perfil'
 
@@ -46,7 +46,7 @@ export default function BottomNav() {
 
       {/* Grupos */}
       <button
-        onClick={() => navigate('/dashboard')}
+        onClick={() => navigate('/grupos')}
         style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, color: isGroups ? CORAL : GRAY, cursor: 'pointer', background: 'none', border: 'none' }}
       >
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none">

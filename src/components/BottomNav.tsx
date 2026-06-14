@@ -9,7 +9,8 @@ export default function BottomNav() {
   const params = useParams<{ id?: string }>()
 
   const isHome = pathname === '/dashboard'
-  const isGroups = pathname.startsWith('/grupos') && !pathname.includes('nova-divida')
+  const isGroups = pathname.startsWith('/grupos')
+  const isActivity = pathname === '/atividade'
   const isProfile = pathname === '/perfil'
 
   const onFab = () => {
@@ -76,14 +77,17 @@ export default function BottomNav() {
 
       {/* Atividade */}
       <button
-        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, color: GRAY, cursor: 'pointer', background: 'none', border: 'none', position: 'relative' }}
+        onClick={() => navigate('/atividade')}
+        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, color: isActivity ? CORAL : GRAY, cursor: 'pointer', background: 'none', border: 'none', position: 'relative' }}
       >
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
           <path d="M18 8.5a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           <path d="M10 21a2 2 0 004 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
         </svg>
         <span style={{ fontSize: 10, fontWeight: 700 }}>Atividade</span>
-        <div style={{ position: 'absolute', top: -2, right: 6, width: 8, height: 8, borderRadius: '50%', background: CORAL, border: '1.5px solid #fff' }} />
+        {!isActivity && (
+          <div style={{ position: 'absolute', top: -2, right: 4, width: 8, height: 8, borderRadius: '50%', background: CORAL, border: '1.5px solid #fff' }} />
+        )}
       </button>
 
       {/* Perfil */}

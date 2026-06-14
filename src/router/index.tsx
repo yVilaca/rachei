@@ -8,6 +8,7 @@ import NewDebtPage from '../features/debts/NewDebtPage'
 import DebtDetailPage from '../features/debts/DebtDetailPage'
 import PaymentLinkPage from '../features/payment/PaymentLinkPage'
 import ProfilePage from '../features/profile/ProfilePage'
+import ActivityPage from '../features/activity/ActivityPage'
 import NotFoundPage from '../features/shared/NotFoundPage'
 
 export const router = createBrowserRouter([
@@ -20,6 +21,7 @@ export const router = createBrowserRouter([
     children: [
       { path: '/dashboard', element: <DashboardPage /> },
       { path: '/grupos/:id', element: <GroupPage /> },
+      { path: '/atividade', element: <ActivityPage /> },
       { path: '/perfil', element: <ProfilePage /> },
     ],
   },

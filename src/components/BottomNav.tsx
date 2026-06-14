@@ -1,4 +1,4 @@
-import { useNavigate, useLocation, useParams } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 const CORAL = '#FF5436'
 const GRAY = '#9A9AA4'
@@ -6,18 +6,21 @@ const GRAY = '#9A9AA4'
 export default function BottomNav() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const params = useParams<{ id?: string }>()
 
   const isHome = pathname === '/dashboard'
   const isGroups = pathname === '/grupos' || pathname.startsWith('/grupos/')
   const isActivity = pathname === '/atividade'
   const isProfile = pathname === '/perfil'
 
+  // Extract group ID from /grupos/:id
+  const groupIdMatch = pathname.match(/^\/grupos\/([^/]+)$/)
+  const currentGroupId = groupIdMatch?.[1]
+
   const onFab = () => {
-    if (params.id) {
-      navigate(`/grupos/${params.id}/nova-divida`)
+    if (currentGroupId) {
+      navigate(`/grupos/${currentGroupId}/nova-divida`)
     } else {
-      navigate('/dashboard')
+      navigate('/grupos')
     }
   }
 

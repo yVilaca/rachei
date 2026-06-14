@@ -8,26 +8,28 @@ export default function NewDebtPage() {
   if (!id) return null
 
   return (
-    <div className="min-h-dvh bg-surface">
+    <div className="min-h-dvh bg-white">
+      {/* Sticky header */}
       <div
-        className="px-5 pt-14 pb-6 text-white"
-        style={{ background: 'linear-gradient(140deg,#FF5436 0%,#FF8A3D 100%)' }}
+        style={{
+          position: 'sticky', top: 0, background: '#fff', zIndex: 5,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '18px 20px 8px',
+        }}
       >
         <button
           onClick={() => navigate(-1)}
-          className="mb-4 flex items-center gap-1 text-sm font-semibold text-white/80"
-          aria-label="Voltar"
+          style={{ fontWeight: 700, fontSize: 14.5, color: '#8A8A93', background: 'none', border: 'none', cursor: 'pointer' }}
         >
-          <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
-            <path d="M7 1L1 7l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          Voltar
+          Cancelar
         </button>
-        <h1 className="font-heading text-2xl font-extrabold tracking-tight">Nova dívida</h1>
+        <span style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 16, color: '#15151A' }}>
+          Nova dívida
+        </span>
+        <span style={{ width: 54 }} />
       </div>
-      <div className="mt-6">
-        <DebtForm groupId={id} />
-      </div>
+
+      <DebtForm groupId={id} />
     </div>
   )
 }

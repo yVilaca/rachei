@@ -36,7 +36,7 @@ export default function ProfilePage() {
   if (!user) return null
 
   return (
-    <div className="min-h-dvh bg-surface pb-10">
+    <div className="min-h-dvh bg-surface pb-28">
       <div
         className="px-5 pt-14 pb-8 text-white"
         style={{ background: 'linear-gradient(140deg,#FF5436 0%,#FF8A3D 100%)' }}

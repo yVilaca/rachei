@@ -9,22 +9,31 @@ export default function GroupHeader({ group }: GroupHeaderProps) {
   const navigate = useNavigate()
 
   return (
-    <div
-      className="px-5 pt-14 pb-6 text-white"
-      style={{ background: 'linear-gradient(140deg,#FF5436 0%,#FF8A3D 100%)' }}
-    >
+    <div className="px-5 pt-14 pb-4">
       <button
         onClick={() => navigate(-1)}
-        className="mb-4 flex items-center gap-1 text-sm font-semibold text-white/80"
+        className="mb-4 flex items-center gap-1.5 text-sm font-bold text-muted"
         aria-label="Voltar"
       >
-        <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
-          <path d="M7 1L1 7l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <svg width="9" height="15" viewBox="0 0 9 15" fill="none">
+          <path d="M7.5 1L1.5 7.5l6 6.5" stroke="#6B6B76" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
         Voltar
       </button>
-      <h1 className="font-heading text-2xl font-extrabold tracking-tight">{group.name}</h1>
-      <p className="mt-1 text-sm text-white/80">{group.members.length} membros</p>
+      <div className="flex items-center gap-3.5">
+        <div
+          className="flex h-[54px] w-[54px] flex-shrink-0 items-center justify-center rounded-[16px] text-[26px]"
+          style={{ background: '#FFF0ED' }}
+        >
+          {group.emoji ?? group.name[0]}
+        </div>
+        <div className="flex-1">
+          <h1 className="font-heading text-[22px] font-extrabold tracking-tight text-[#15151A]">
+            {group.name}
+          </h1>
+          <p className="text-xs text-muted">{group.members.length} membros</p>
+        </div>
+      </div>
     </div>
   )
 }

@@ -16,6 +16,7 @@ export interface User {
 export interface Group {
   id: string
   name: string
+  emoji?: string
   createdBy: string
   members: GroupMember[]
   createdAt: string

@@ -7,12 +7,10 @@ import type { FriendBalance } from '../../types'
 import BalanceCard from './components/BalanceCard'
 import FriendRow from './components/FriendRow'
 import GroupCard from './components/GroupCard'
-import { Button } from '../../components/ui/button'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
   const currentUser = useAuthStore((s) => s.currentUser)
-  const logout = useAuthStore((s) => s.logout)
   const { groups, debts } = useAppStore()
 
   const { totalOwed, totalOwing, friendBalances } = useMemo(() => {
@@ -57,7 +55,7 @@ export default function DashboardPage() {
   if (!currentUser) return null
 
   return (
-    <div className="no-scrollbar min-h-dvh overflow-auto bg-surface pb-10">
+    <div className="no-scrollbar min-h-dvh overflow-auto bg-surface pb-28">
       <div className="flex items-center justify-between px-5 pb-2 pt-14">
         <div>
           <p className="text-sm font-semibold text-muted">Olá, {currentUser.name.split(' ')[0]} 👋</p>
@@ -101,19 +99,13 @@ export default function DashboardPage() {
             <GroupCard key={group.id} group={group} pendingCount={getPendingCount(group.id)} />
           ))}
         </div>
-        <Button
-          className="mt-4 w-full rounded-2xl border-2 border-dashed border-border bg-transparent font-semibold text-muted shadow-none hover:bg-white"
-          variant="outline"
+        <button
+          className="mt-4 w-full rounded-2xl border-2 border-dashed border-[#D8D8DF] py-4 text-sm font-bold text-muted"
           onClick={() => {}}
+          type="button"
         >
           + Criar novo grupo
-        </Button>
-      </div>
-
-      <div className="px-5 mt-8">
-        <Button variant="ghost" className="w-full text-muted text-xs" onClick={logout}>
-          Sair da conta
-        </Button>
+        </button>
       </div>
     </div>
   )

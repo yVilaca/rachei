@@ -21,6 +21,7 @@ export const MOCK_GROUPS: Group[] = [
   {
     id: 'group-floripa',
     name: 'Viagem Floripa',
+    emoji: '🏖️',
     createdBy: 'user-sofia',
     archived: false,
     createdAt: '2026-05-01T10:00:00Z',
@@ -34,6 +35,7 @@ export const MOCK_GROUPS: Group[] = [
   {
     id: 'group-republica',
     name: 'República 2026',
+    emoji: '🏠',
     createdBy: 'user-lucas',
     archived: false,
     createdAt: '2026-02-01T10:00:00Z',

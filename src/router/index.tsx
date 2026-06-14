@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import PrivateRoute from './PrivateRoute'
+import AppShell from './AppShell'
 import AuthPage from '../features/auth/AuthPage'
 import DashboardPage from '../features/dashboard/DashboardPage'
 import GroupPage from '../features/groups/GroupPage'
@@ -13,26 +14,18 @@ export const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/dashboard" replace /> },
   { path: '/login', element: <AuthPage /> },
   { path: '/cadastro', element: <AuthPage mode="register" /> },
+  // Pages with bottom nav
   {
-    path: '/dashboard',
-    element: <PrivateRoute><DashboardPage /></PrivateRoute>,
+    element: <PrivateRoute><AppShell /></PrivateRoute>,
+    children: [
+      { path: '/dashboard', element: <DashboardPage /> },
+      { path: '/grupos/:id', element: <GroupPage /> },
+      { path: '/perfil', element: <ProfilePage /> },
+    ],
   },
-  {
-    path: '/grupos/:id',
-    element: <PrivateRoute><GroupPage /></PrivateRoute>,
-  },
-  {
-    path: '/grupos/:id/nova-divida',
-    element: <PrivateRoute><NewDebtPage /></PrivateRoute>,
-  },
-  {
-    path: '/dividas/:id',
-    element: <PrivateRoute><DebtDetailPage /></PrivateRoute>,
-  },
+  // Pages without bottom nav
+  { path: '/grupos/:id/nova-divida', element: <PrivateRoute><NewDebtPage /></PrivateRoute> },
+  { path: '/dividas/:id', element: <PrivateRoute><DebtDetailPage /></PrivateRoute> },
   { path: '/pagar/:token', element: <PaymentLinkPage /> },
-  {
-    path: '/perfil',
-    element: <PrivateRoute><ProfilePage /></PrivateRoute>,
-  },
   { path: '*', element: <NotFoundPage /> },
 ])

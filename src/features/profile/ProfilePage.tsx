@@ -1,32 +1,47 @@
-import { useMemo } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/auth.store'
-import { useAppStore } from '../../stores/app.store'
-import { formatCurrency, getInitials } from '../../lib/utils'
-import { Button } from '../../components/ui/button'
+import { getInitials } from '../../lib/utils'
 
-const SETTINGS_ITEMS = [
-  { label: 'Notificações', icon: '🔔' },
-  { label: 'Privacidade', icon: '🔒' },
-  { label: 'Ajuda & Suporte', icon: '💬' },
-  { label: 'Termos de uso', icon: '📄' },
+const PRO_FEATURES = [
+  'Grupos ilimitados',
+  'Cobranças automáticas via WhatsApp',
+  'Lembretes e notificações',
+  'Relatórios e histórico completo',
 ]
+
+const TOGGLES = [
+  { icon: '🔔', label: 'Cobranças recebidas' },
+  { icon: '💬', label: 'Confirmações de pagamento' },
+  { icon: '📅', label: 'Lembretes semanais' },
+]
+
+function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+  return (
+    <div
+      onClick={onToggle}
+      style={{
+        width: 46, height: 28, borderRadius: 999, cursor: 'pointer',
+        background: on ? '#FF5436' : '#D8D8E0',
+        position: 'relative', transition: 'background .2s', flexShrink: 0,
+      }}
+    >
+      <div style={{
+        position: 'absolute', top: 3,
+        left: on ? 21 : 3,
+        width: 22, height: 22, borderRadius: '50%',
+        background: '#fff',
+        boxShadow: '0 1px 3px rgba(0,0,0,.2)',
+        transition: 'left .2s',
+      }} />
+    </div>
+  )
+}
 
 export default function ProfilePage() {
   const navigate = useNavigate()
   const { currentUser: user, logout } = useAuthStore()
-  const { debts } = useAppStore()
-
-  const stats = useMemo(() => {
-    if (!user) return { totalDebts: 0, totalPaid: 0, totalPending: 0 }
-    const all = debts.flatMap((d) => d.installments).filter((i) => i.debtorUserId === user.id)
-    const paid = all.filter((i) => i.status === 'paid')
-    return {
-      totalDebts: all.length,
-      totalPaid: paid.reduce((acc, i) => acc + i.amount, 0),
-      totalPending: all.filter((i) => i.status === 'pending').reduce((acc, i) => acc + i.amount, 0),
-    }
-  }, [debts, user])
+  const [toggles, setToggles] = useState([true, true, false])
 
   const handleLogout = () => {
     logout()
@@ -35,75 +50,112 @@ export default function ProfilePage() {
 
   if (!user) return null
 
+  const isFree = user.plan === 'free'
+  const planBadgeBg = isFree ? '#F0F0F4' : 'linear-gradient(135deg,#FF5436,#FFB13D)'
+  const planBadgeFg = isFree ? '#6B6B76' : '#fff'
+  const planLabel = isFree ? 'FREE' : 'PRO'
+
   return (
-    <div className="min-h-dvh bg-surface pb-28">
-      <div
-        className="px-5 pt-14 pb-8 text-white"
-        style={{ background: 'linear-gradient(140deg,#FF5436 0%,#FF8A3D 100%)' }}
-      >
-        <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-white/20 font-heading text-xl font-extrabold text-white">
-            {getInitials(user.name)}
-          </div>
-          <div>
-            <p className="font-heading text-xl font-extrabold">{user.name}</p>
-            <p className="text-sm text-white/80">{user.email}</p>
-            <span className="mt-1 inline-block rounded-full bg-white/20 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide">
-              {user.plan}
-            </span>
-          </div>
-        </div>
+    <div
+      className="no-scrollbar min-h-dvh overflow-auto"
+      style={{ background: '#F5F5F8', padding: '22px 20px 110px', fontFamily: '"Plus Jakarta Sans", sans-serif' }}
+    >
+      {/* Title */}
+      <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 28, color: '#15151A', letterSpacing: '-0.02em', marginBottom: 20 }}>
+        Perfil
       </div>
 
-      <div className="px-5 mt-5 flex flex-col gap-4">
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { label: 'Cobranças', value: stats.totalDebts.toString() },
-            { label: 'Pago', value: formatCurrency(stats.totalPaid) },
-            { label: 'Pendente', value: formatCurrency(stats.totalPending) },
-          ].map((s) => (
-            <div key={s.label} className="rounded-2xl bg-white p-4 shadow-card text-center">
-              <p className="font-heading text-lg font-extrabold text-[#15151A]">{s.value}</p>
-              <p className="mt-0.5 text-xs text-muted">{s.label}</p>
-            </div>
-          ))}
+      {/* User card */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: '#fff', borderRadius: 22, padding: 18, boxShadow: '0 2px 12px rgba(0,0,0,.04)' }}>
+        <div style={{
+          width: 62, height: 62, borderRadius: '50%', flexShrink: 0,
+          background: 'linear-gradient(135deg,#FFB199,#FF7A59)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#fff', fontWeight: 800, fontSize: 20,
+          border: '3px solid #fff', boxShadow: '0 3px 10px rgba(255,90,60,.3)',
+        }}>
+          {getInitials(user.name)}
         </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 800, fontSize: 18, color: '#15151A' }}>{user.name}</div>
+          <div style={{ fontSize: 13, color: '#9A9AA4', marginTop: 2 }}>{user.email}</div>
+        </div>
+        <span style={{
+          padding: '5px 12px', borderRadius: 999,
+          fontSize: 11, fontWeight: 800,
+          background: planBadgeBg, color: planBadgeFg, flexShrink: 0,
+        }}>
+          {planLabel}
+        </span>
+      </div>
 
-        {user.plan === 'free' && (
-          <div
-            className="rounded-3xl p-5 text-white"
-            style={{ background: 'linear-gradient(135deg,#FF5436,#FF8A3D)' }}
-          >
-            <p className="font-heading text-base font-extrabold">Upgrade para Pro</p>
-            <p className="mt-1 text-sm text-white/80">Grupos ilimitados, lembretes automáticos e muito mais.</p>
-            <Button className="mt-3 rounded-xl bg-white font-bold text-brand hover:bg-white/90">
-              Ver planos
-            </Button>
+      {/* Pro upgrade card */}
+      {isFree ? (
+        <div style={{
+          marginTop: 16, borderRadius: 24, padding: 22,
+          background: 'linear-gradient(140deg,#2A1A12,#4A2A18)',
+          color: '#fff', position: 'relative', overflow: 'hidden',
+        }}>
+          {/* Decorative circle */}
+          <div style={{ position: 'absolute', right: -30, top: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,154,61,.18)' }} />
+          {/* Badge */}
+          <div style={{ display: 'inline-block', background: 'linear-gradient(135deg,#FF5436,#FFB13D)', color: '#fff', fontSize: 11, fontWeight: 800, padding: '4px 12px', borderRadius: 999, position: 'relative' }}>
+            RACHEI PRO
           </div>
-        )}
-
-        <div className="rounded-3xl bg-white shadow-card overflow-hidden">
-          {SETTINGS_ITEMS.map((item, idx) => (
-            <button
-              key={item.label}
-              className={`flex w-full items-center gap-3 px-5 py-4 text-left text-sm font-semibold text-[#15151A] hover:bg-surface transition-colors ${idx < SETTINGS_ITEMS.length - 1 ? 'border-b border-border' : ''}`}
-            >
-              <span className="text-lg">{item.icon}</span>
-              {item.label}
-              <span className="ml-auto text-muted">›</span>
-            </button>
-          ))}
+          {/* Heading */}
+          <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 21, marginTop: 14, position: 'relative' }}>
+            Desbloqueie tudo
+          </div>
+          {/* Features */}
+          <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 9, position: 'relative' }}>
+            {PRO_FEATURES.map((feat) => (
+              <div key={feat} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5 }}>
+                <span style={{ color: '#FFC53D', fontWeight: 800 }}>✓</span>
+                <span style={{ opacity: 0.92 }}>{feat}</span>
+              </div>
+            ))}
+          </div>
+          {/* CTA */}
+          <div style={{ marginTop: 18, background: '#fff', color: '#2A1A12', textAlign: 'center', padding: 14, borderRadius: 14, fontWeight: 800, fontSize: 15, cursor: 'pointer', position: 'relative' }}>
+            Assinar Pro · R$ 9,90/mês
+          </div>
         </div>
+      ) : (
+        <div style={{ marginTop: 16, borderRadius: 24, padding: 22, background: 'linear-gradient(140deg,#2A1A12,#4A2A18)', color: '#fff', textAlign: 'center' }}>
+          <div style={{ fontSize: 34 }}>👑</div>
+          <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 20, marginTop: 8 }}>Você é Rachei Pro</div>
+          <div style={{ fontSize: 13, opacity: 0.85, marginTop: 6 }}>Grupos ilimitados, WhatsApp e mais.</div>
+        </div>
+      )}
 
-        <Button
-          onClick={handleLogout}
-          variant="outline"
-          className="w-full rounded-2xl border-2 border-brand font-bold text-brand hover:bg-brand/5"
-        >
-          Sair da conta
-        </Button>
+      {/* Notifications section */}
+      <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 700, fontSize: 15, color: '#15151A', margin: '24px 2px 12px' }}>
+        Notificações
+      </div>
+      <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 2px 10px rgba(0,0,0,.04)', overflow: 'hidden' }}>
+        {TOGGLES.map((t, i) => (
+          <div
+            key={t.label}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '15px 16px', cursor: 'pointer',
+              borderBottom: i < TOGGLES.length - 1 ? '1px solid #F2F2F6' : 'none',
+            }}
+            onClick={() => setToggles((prev) => prev.map((v, idx) => idx === i ? !v : v))}
+          >
+            <span style={{ fontSize: 18 }}>{t.icon}</span>
+            <span style={{ flex: 1, fontWeight: 600, fontSize: 14.5, color: '#1A1A1F' }}>{t.label}</span>
+            <Toggle on={toggles[i]} onToggle={() => setToggles((prev) => prev.map((v, idx) => idx === i ? !v : v))} />
+          </div>
+        ))}
+      </div>
 
-        <p className="text-center text-xs text-muted">Rachei v1.0.0 · Feito com ♥ no Brasil</p>
+      {/* Logout */}
+      <div
+        onClick={handleLogout}
+        style={{ marginTop: 18, textAlign: 'center', color: '#E0431F', fontWeight: 700, fontSize: 14.5, padding: 14, cursor: 'pointer' }}
+      >
+        Sair da conta
       </div>
     </div>
   )

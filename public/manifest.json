@@ -1,0 +1,12 @@
+{
+  "name": "Rachei",
+  "short_name": "Rachei",
+  "description": "Divide gastos com amigos sem drama",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F6F6F8",
+  "theme_color": "#FF5436",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

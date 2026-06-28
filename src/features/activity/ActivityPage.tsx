@@ -332,23 +332,18 @@ function EventCard({ event, isRead, onOpen, onMarkRead }: CardProps) {
       style={{
         background: showUnread ? '#fff' : '#FAFAFC',
         borderRadius: 16, padding: 14,
-        boxShadow: showUnread ? '0 2px 10px rgba(0,0,0,.06)' : '0 1px 4px rgba(0,0,0,.03)',
+        boxShadow: [
+          showUnread
+            ? `inset 3px 0 0 ${event.actionable ? '#FF5436' : '#C8C8D0'}`
+            : null,
+          showUnread ? '0 2px 10px rgba(0,0,0,.06)' : '0 1px 4px rgba(0,0,0,.03)',
+        ].filter(Boolean).join(', '),
         border: showUnread && event.actionable
           ? `1.5px solid ${style.bg}`
           : `1.5px solid ${showUnread ? '#EBEBEF' : 'transparent'}`,
-        position: 'relative',
-        cursor: showUnread ? 'default' : 'default',
         transition: 'background .2s',
       }}
     >
-      {/* Unread left bar */}
-      {showUnread && (
-        <div style={{
-          position: 'absolute', left: 0, top: 10, bottom: 10,
-          width: 3, borderRadius: '0 3px 3px 0',
-          background: event.actionable ? '#FF5436' : '#C8C8D0',
-        }} />
-      )}
 
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 13 }}>
         {/* Icon */}

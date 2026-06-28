@@ -11,7 +11,7 @@ export default function PaymentLinkPage() {
   const { token } = useParams<{ token: string }>()
   const navigate = useNavigate()
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
-  const { debts, updateInstallmentStatus } = useAppStore()
+  const { debts, groups, updateInstallmentStatus } = useAppStore()
   const [showRegister, setShowRegister] = useState(false)
   const [proofFile, setProofFile] = useState<File | null>(null)
   const [submitted, setSubmitted] = useState(false)
@@ -54,7 +54,9 @@ export default function PaymentLinkPage() {
   const isAwaiting = status === 'awaiting_confirmation'
   const isPaid = status === 'paid'
 
-  const creditor = debt.installments.find((i) => i.debtorUserId !== debt.paidByUserId)
+  const allMembers = groups.flatMap((g) => g.members)
+  const creditorUser = allMembers.find((m) => m.userId === debt.paidByUserId)?.user
+  const creditorName = creditorUser?.name ?? debt.paidByUserId
   const creditorAvatar = avatarFor(debt.paidByUserId)
 
   const doConfirm = () => {
@@ -155,12 +157,12 @@ export default function PaymentLinkPage() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontWeight: 800, fontSize: 12, flexShrink: 0,
             }}>
-              {getInitials(creditor?.debtor.name ?? debt.paidByUserId)}
+              {getInitials(creditorName)}
             </div>
             <div>
               <div style={{ fontSize: 11, color: '#6B6B76', fontWeight: 600 }}>Cobrado por</div>
               <div style={{ fontSize: 14.5, fontWeight: 700, color: '#1A1A1F' }}>
-                {debt.installments.find((i) => i.debtorUserId !== debt.paidByUserId)?.debtor.name ?? debt.paidByUserId}
+                {creditorName}
               </div>
             </div>
             <div style={{ marginLeft: 'auto' }}>

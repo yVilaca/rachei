@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../../stores/auth.store'
 import { useAppStore } from '../../../stores/app.store'
@@ -9,10 +9,12 @@ interface DebtFormProps {
   groupId: string
 }
 
-const LABEL_STYLE: React.CSSProperties = {
-  fontSize: 12.5, fontWeight: 700, color: '#6B6B76', letterSpacing: '0.04em',
-  marginBottom: 8,
+const LABEL: React.CSSProperties = {
+  fontSize: 12.5, fontWeight: 700, color: '#6B6B76', letterSpacing: '0.04em', marginBottom: 8,
 }
+
+const fmt = (cents: number) =>
+  (cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 export default function DebtForm({ groupId }: DebtFormProps) {
   const navigate = useNavigate()
@@ -21,79 +23,125 @@ export default function DebtForm({ groupId }: DebtFormProps) {
 
   const group = groups.find((g) => g.id === groupId)!
 
-  const [amountDisplay, setAmountDisplay] = useState('')
+  // ── state ────────────────────────────────────────────────────────────────
+  const [amountCents, setAmountCents] = useState(0)
   const [description, setDescription] = useState('')
   const [paidByUserId, setPaidByUserId] = useState(currentUser?.id ?? '')
-  // All members selected by default (including the payer — their share is auto-marked paid)
-  const [selectedDebtors, setSelectedDebtors] = useState<string[]>(group.members.map((m) => m.userId))
+  const [selectedDebtors, setSelectedDebtors] = useState<string[]>(
+    group.members.map((m) => m.userId),
+  )
   const [splitType, setSplitType] = useState<SplitType>('equal')
-  const [customAmounts, setCustomAmounts] = useState<Record<string, number>>({})
-  const [error, setError] = useState('')
+  const [customCents, setCustomCents] = useState<Record<string, number>>({})
 
-  const total = parseFloat(amountDisplay.replace(',', '.')) || 0
+  // touched flags for inline errors
+  const [touchedDesc, setTouchedDesc] = useState(false)
+  const [touchedAmount, setTouchedAmount] = useState(false)
+  const [submitAttempted, setSubmitAttempted] = useState(false)
+  const [toastMsg, setToastMsg] = useState<string | null>(null)
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // All members are eligible — payer can include their own share
-  const eligibleDebtors = group.members
+  const showToast = (msg: string) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current)
+    setToastMsg(msg)
+    toastTimer.current = setTimeout(() => setToastMsg(null), 3500)
+  }
+  useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current) }, [])
 
-  const debtorRows = eligibleDebtors.map((m) => {
-    const isSelected = selectedDebtors.includes(m.userId)
-    const selectedCount = selectedDebtors.length
-    const equalShare = isSelected && selectedCount > 0 ? total / selectedCount : 0
-    return {
-      userId: m.userId,
-      name: m.user.name,
-      initials: getInitials(m.user.name),
-      isSelected,
-      equalShare,
-      customAmount: customAmounts[m.userId] ?? 0,
-    }
-  })
+  // ── derived ──────────────────────────────────────────────────────────────
+  const total = amountCents / 100
+  const selectedCount = selectedDebtors.length
+  const equalShareCents = selectedCount > 0 ? Math.floor(amountCents / selectedCount) : 0
+  // Distribute rounding remainder to first debtor
+  const equalRemainder = amountCents - equalShareCents * selectedCount
 
-  const customSum = debtorRows
-    .filter((d) => d.isSelected)
-    .reduce((acc, d) => acc + (customAmounts[d.userId] ?? 0), 0)
+  const customSumCents = selectedDebtors.reduce((acc, id) => acc + (customCents[id] ?? 0), 0)
+  const diffCents = amountCents - customSumCents // positive = under, negative = over
 
-  const splitOk = splitType === 'equal' || Math.abs(total - customSum) < 0.01
-  const canSubmit = description.trim() && total > 0 && selectedDebtors.length > 0 && splitOk
+  const splitOk = splitType === 'equal'
+    ? selectedCount > 0
+    : Math.abs(diffCents) < 1 // within 1 cent
+
+  const hasExternalDebtor = selectedDebtors.some((id) => id !== paidByUserId)
+
+  // Per-debtor custom validation
+  const zeroCentDebtors = splitType === 'custom'
+    ? selectedDebtors.filter((id) => (customCents[id] ?? 0) === 0)
+    : []
+
+  // ── error messages ───────────────────────────────────────────────────────
+  const descError = !description.trim() ? 'Informe uma descrição' : null
+  const amountError = amountCents === 0 ? 'Informe o valor total' : null
+  const debtorError = selectedCount === 0
+    ? 'Selecione ao menos um participante'
+    : !hasExternalDebtor
+    ? 'Inclua ao menos um amigo na divisão'
+    : null
+  const splitError = splitType === 'custom' && !splitOk
+    ? diffCents > 0
+      ? `Faltam R$ ${fmt(diffCents)} para distribuir`
+      : `Excede o total em R$ ${fmt(Math.abs(diffCents))}`
+    : null
+  const zeroCentsError = zeroCentDebtors.length > 0 && splitType === 'custom'
+    ? 'Defina o valor de cada participante selecionado'
+    : null
+
+  const formError = descError ?? amountError ?? debtorError ?? splitError ?? zeroCentsError ?? null
+  const canSubmit = !formError
+
+  // ── handlers ─────────────────────────────────────────────────────────────
+  const handleAmountInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTouchedAmount(true)
+    const digits = e.target.value.replace(/\D/g, '').replace(/^0+/, '') || '0'
+    setAmountCents(Math.min(parseInt(digits, 10), 99999999)) // cap at R$999.999,99
+  }
+
+  const toggleDebtor = (userId: string) => {
+    setSelectedDebtors((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId],
+    )
+  }
+
+  const handleCustomCents = (userId: string, raw: string) => {
+    const digits = raw.replace(/\D/g, '').replace(/^0+/, '') || '0'
+    setCustomCents((prev) => ({ ...prev, [userId]: parseInt(digits, 10) }))
+  }
 
   const handleSubmit = () => {
-    setError('')
-    if (!description.trim()) { setError('Informe uma descrição'); return }
-    if (total <= 0) { setError('Valor deve ser maior que R$ 0,01'); return }
-    if (selectedDebtors.length === 0) { setError('Selecione ao menos um devedor'); return }
-    if (splitType === 'custom' && !splitOk) { setError('A soma das parcelas deve ser igual ao total'); return }
+    setSubmitAttempted(true)
+    setTouchedDesc(true)
+    setTouchedAmount(true)
+    if (!canSubmit) {
+      showToast(formError!)
+      return
+    }
 
-    const debtors = selectedDebtors.map((userId) => {
-      const count = selectedDebtors.length
-      return {
-        userId,
-        amount: splitType === 'equal' ? total / count : (customAmounts[userId] ?? 0),
-      }
-    })
+    const debtors = selectedDebtors.map((userId, idx) => ({
+      userId,
+      amount: splitType === 'equal'
+        ? (equalShareCents + (idx === 0 ? equalRemainder : 0)) / 100
+        : (customCents[userId] ?? 0) / 100,
+    }))
 
     addDebt({ groupId, description, totalAmount: total, paidByUserId, splitType, debtors })
     navigate(`/grupos/${groupId}`)
   }
 
-  const toggleDebtor = (userId: string) => {
-    setSelectedDebtors((prev) =>
-      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
-    )
-  }
+  // ── render ────────────────────────────────────────────────────────────────
+  const showDescError = touchedDesc && !!descError
+  const showAmountError = touchedAmount && !!amountError
 
   return (
     <div style={{ padding: '8px 22px 160px', position: 'relative' }}>
+
       {/* GRUPO */}
       <div style={{ marginTop: 14 }}>
-        <div style={LABEL_STYLE}>GRUPO</div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
-          <div
-            style={{
-              display: 'flex', alignItems: 'center', gap: 7,
-              padding: '9px 14px', borderRadius: 14, fontWeight: 700, fontSize: 13,
-              background: '#FFF0ED', color: '#FF5436', border: '1.5px solid #FF5436',
-            }}
-          >
+        <div style={LABEL}>GRUPO</div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 7,
+            padding: '9px 14px', borderRadius: 14, fontWeight: 700, fontSize: 13,
+            background: '#FFF0ED', color: '#FF5436', border: '1.5px solid #FF5436',
+          }}>
             <span>{group.emoji}</span>{group.name}
           </div>
         </div>
@@ -101,18 +149,20 @@ export default function DebtForm({ groupId }: DebtFormProps) {
 
       {/* VALOR TOTAL */}
       <div style={{ marginTop: 22 }}>
-        <div style={LABEL_STYLE}>VALOR TOTAL</div>
+        <div style={LABEL}>VALOR TOTAL</div>
         <div style={{
           display: 'flex', alignItems: 'center',
-          background: '#F7F7FA', border: '1.5px solid #ECECF0',
+          background: '#F7F7FA',
+          border: `1.5px solid ${showAmountError ? '#E0431F' : '#ECECF0'}`,
           borderRadius: 16, padding: '4px 18px',
         }}>
-          <span style={{ fontSize: 22, fontWeight: 800, color: '#9A9AA4' }}>R$</span>
+          <span style={{ fontSize: 22, fontWeight: 800, color: amountCents > 0 ? '#15151A' : '#9A9AA4' }}>R$</span>
           <input
-            inputMode="decimal"
+            inputMode="numeric"
             placeholder="0,00"
-            value={amountDisplay}
-            onChange={(e) => setAmountDisplay(e.target.value)}
+            value={amountCents > 0 ? fmt(amountCents) : ''}
+            onChange={handleAmountInput}
+            onBlur={() => setTouchedAmount(true)}
             style={{
               flex: 1, border: 'none', background: 'transparent',
               fontFamily: '"Bricolage Grotesque", sans-serif',
@@ -121,37 +171,40 @@ export default function DebtForm({ groupId }: DebtFormProps) {
             }}
           />
         </div>
+        {showAmountError && (
+          <p style={{ fontSize: 12, color: '#E0431F', fontWeight: 600, marginTop: 5 }}>{amountError}</p>
+        )}
       </div>
 
       {/* DESCRIÇÃO */}
       <div style={{ marginTop: 22 }}>
-        <div style={LABEL_STYLE}>DESCRIÇÃO</div>
+        <div style={LABEL}>DESCRIÇÃO</div>
         <input
           placeholder="Ex: Rodízio japonês 🍣"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
+          onBlur={() => setTouchedDesc(true)}
           style={{
-            width: '100%', border: '1.5px solid #ECECF0',
+            width: '100%',
+            border: `1.5px solid ${showDescError ? '#E0431F' : '#ECECF0'}`,
             borderRadius: 16, padding: '14px 16px', fontSize: 15,
             color: '#15151A', background: '#F7F7FA', outline: 'none',
             fontFamily: '"Plus Jakarta Sans", sans-serif',
           }}
         />
+        {showDescError && (
+          <p style={{ fontSize: 12, color: '#E0431F', fontWeight: 600, marginTop: 5 }}>{descError}</p>
+        )}
       </div>
 
       {/* QUEM PAGOU */}
       <div style={{ marginTop: 22 }}>
-        <div style={LABEL_STYLE}>QUEM PAGOU (CREDOR)</div>
+        <div style={LABEL}>QUEM PAGOU (CREDOR)</div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
           {group.members.map((m) => {
             const active = paidByUserId === m.userId
             return (
-              <button
-                key={m.userId}
-                type="button"
-                onClick={() => {
-                  setPaidByUserId(m.userId)
-                }}
+              <button key={m.userId} type="button" onClick={() => setPaidByUserId(m.userId)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 7,
                   padding: '8px 13px 8px 8px', borderRadius: 999,
@@ -180,113 +233,121 @@ export default function DebtForm({ groupId }: DebtFormProps) {
       {/* QUEM DEVE */}
       <div style={{ marginTop: 22 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-          <span style={LABEL_STYLE}>QUEM DEVE</span>
+          <span style={LABEL}>QUEM DIVIDE</span>
           <span style={{ fontSize: 11.5, color: '#9A9AA4' }}>
-            {selectedDebtors.length} selecionado{selectedDebtors.length !== 1 ? 's' : ''}
+            {selectedCount} selecionado{selectedCount !== 1 ? 's' : ''}
           </span>
         </div>
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {debtorRows.map((d) => (
-            <button
-              key={d.userId}
-              type="button"
-              onClick={() => toggleDebtor(d.userId)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '11px 14px', borderRadius: 15, cursor: 'pointer',
-                background: d.isSelected ? '#FFF0ED' : '#fff',
-                border: `1.5px solid ${d.isSelected ? '#FF5436' : '#ECECF0'}`,
-                textAlign: 'left',
-              }}
-            >
-              <div style={{
-                width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
-                background: d.isSelected ? '#FFD6CC' : '#F0F0F4',
-                color: d.isSelected ? '#FF5436' : '#6B6B76',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 800, fontSize: 12,
-              }}>
-                {d.initials}
-              </div>
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                <span style={{ fontWeight: 700, fontSize: 14.5, color: '#1A1A1F' }}>
-                  {d.name.split(' ')[0]}
-                </span>
-                {d.userId === paidByUserId && (
-                  <span style={{
-                    fontSize: 10, fontWeight: 800, color: '#0E8F5C',
-                    background: '#E9F9F0', padding: '2px 7px', borderRadius: 999,
-                    whiteSpace: 'nowrap',
-                  }}>
-                    minha parte
+          {group.members.map((m) => {
+            const isSelected = selectedDebtors.includes(m.userId)
+            const isPayer = m.userId === paidByUserId
+            const myShareCents = isSelected
+              ? splitType === 'equal'
+                ? equalShareCents
+                : (customCents[m.userId] ?? 0)
+              : 0
+            const hasZeroCustom = isSelected && splitType === 'custom' && (customCents[m.userId] ?? 0) === 0
+
+            return (
+              <button key={m.userId} type="button" onClick={() => toggleDebtor(m.userId)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '11px 14px', borderRadius: 15, cursor: 'pointer',
+                  background: isSelected ? '#FFF0ED' : '#fff',
+                  border: `1.5px solid ${hasZeroCustom && submitAttempted ? '#E0431F' : isSelected ? '#FF5436' : '#ECECF0'}`,
+                  textAlign: 'left',
+                }}
+              >
+                {/* Avatar */}
+                <div style={{
+                  width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
+                  background: isSelected ? '#FFD6CC' : '#F0F0F4',
+                  color: isSelected ? '#FF5436' : '#6B6B76',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 800, fontSize: 12,
+                }}>
+                  {getInitials(m.user.name)}
+                </div>
+
+                {/* Name + badge */}
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                  <span style={{ fontWeight: 700, fontSize: 14.5, color: '#1A1A1F' }}>
+                    {m.user.name.split(' ')[0]}
+                  </span>
+                  {isPayer && (
+                    <span style={{
+                      fontSize: 10, fontWeight: 800, color: '#0E8F5C',
+                      background: '#E9F9F0', padding: '2px 7px', borderRadius: 999, whiteSpace: 'nowrap',
+                    }}>minha parte</span>
+                  )}
+                </div>
+
+                {/* Share amount or custom input */}
+                {isSelected && splitType === 'equal' && amountCents > 0 && (
+                  <span style={{ fontWeight: 800, fontSize: 14, color: '#11A36B', flexShrink: 0 }}>
+                    R$ {fmt(myShareCents)}
                   </span>
                 )}
-              </div>
-              {d.isSelected && splitType === 'equal' && total > 0 && (
-                <span style={{ fontWeight: 800, fontSize: 14, color: '#11A36B' }}>
-                  R$ {(d.equalShare).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </span>
-              )}
-              {d.isSelected && splitType === 'custom' && (
-                <div
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 3,
-                    background: '#fff', border: '1.5px solid #ECECF0',
-                    borderRadius: 10, padding: '5px 10px',
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <span style={{ fontSize: 12, color: '#9A9AA4', fontWeight: 700 }}>R$</span>
-                  <input
-                    inputMode="decimal"
-                    placeholder="0,00"
-                    value={customAmounts[d.userId] !== undefined ? customAmounts[d.userId].toString() : ''}
-                    onChange={(e) => {
-                      const v = parseFloat(e.target.value) || 0
-                      setCustomAmounts((prev) => ({ ...prev, [d.userId]: v }))
-                    }}
+                {isSelected && splitType === 'custom' && (
+                  <div
+                    onClick={(e) => e.stopPropagation()}
                     style={{
-                      width: 62, border: 'none', background: 'transparent',
-                      fontWeight: 800, fontSize: 14, color: '#15151A',
-                      textAlign: 'right', outline: 'none',
-                      fontFamily: '"Plus Jakarta Sans", sans-serif',
+                      display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0,
+                      background: '#fff',
+                      border: `1.5px solid ${hasZeroCustom && submitAttempted ? '#E0431F' : '#ECECF0'}`,
+                      borderRadius: 10, padding: '5px 10px',
                     }}
-                  />
-                </div>
-              )}
-              <div style={{
-                width: 24, height: 24, borderRadius: 8, flexShrink: 0,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: d.isSelected ? '#FF5436' : 'transparent',
-                border: `2px solid ${d.isSelected ? '#FF5436' : '#D0D0D8'}`,
-              }}>
-                {d.isSelected && (
-                  <svg width="13" height="11" viewBox="0 0 13 11">
-                    <path d="M1.5 5.5L5 9l6.5-7.5" stroke="#fff" strokeWidth="2.4" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+                  >
+                    <span style={{ fontSize: 12, color: '#9A9AA4', fontWeight: 700 }}>R$</span>
+                    <input
+                      inputMode="numeric"
+                      placeholder="0,00"
+                      value={(customCents[m.userId] ?? 0) > 0 ? fmt(customCents[m.userId] ?? 0) : ''}
+                      onChange={(e) => handleCustomCents(m.userId, e.target.value)}
+                      style={{
+                        width: 68, border: 'none', background: 'transparent',
+                        fontWeight: 800, fontSize: 14, color: '#15151A',
+                        textAlign: 'right', outline: 'none',
+                        fontFamily: '"Plus Jakarta Sans", sans-serif',
+                      }}
+                    />
+                  </div>
                 )}
-              </div>
-            </button>
-          ))}
+
+                {/* Checkbox */}
+                <div style={{
+                  width: 24, height: 24, borderRadius: 8, flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: isSelected ? '#FF5436' : 'transparent',
+                  border: `2px solid ${isSelected ? '#FF5436' : '#D0D0D8'}`,
+                }}>
+                  {isSelected && (
+                    <svg width="13" height="11" viewBox="0 0 13 11">
+                      <path d="M1.5 5.5L5 9l6.5-7.5" stroke="#fff" strokeWidth="2.4" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </div>
+              </button>
+            )
+          })}
         </div>
       </div>
 
       {/* DIVISÃO */}
-      {selectedDebtors.length > 0 && (
+      {selectedCount > 0 && (
         <div style={{ marginTop: 22 }}>
-          <div style={LABEL_STYLE}>DIVISÃO</div>
+          <div style={LABEL}>DIVISÃO</div>
           <div style={{ display: 'flex', background: '#F0F0F4', borderRadius: 14, padding: 4 }}>
             {(['equal', 'custom'] as SplitType[]).map((type) => {
               const active = splitType === type
               return (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => setSplitType(type)}
+                <button key={type} type="button" onClick={() => setSplitType(type)}
                   style={{
                     flex: 1, textAlign: 'center', padding: '10px',
-                    borderRadius: 11, fontWeight: 700, fontSize: 13.5, cursor: 'pointer',
-                    border: 'none',
+                    borderRadius: 11, fontWeight: 700, fontSize: 13.5,
+                    cursor: 'pointer', border: 'none',
                     background: active ? '#fff' : 'transparent',
                     color: active ? '#15151A' : '#9A9AA4',
                     boxShadow: active ? '0 1px 4px rgba(0,0,0,.1)' : 'none',
@@ -298,32 +359,66 @@ export default function DebtForm({ groupId }: DebtFormProps) {
             })}
           </div>
 
-          {/* Split info */}
-          {total > 0 && splitType === 'custom' && selectedDebtors.length > 0 && (
+          {/* Equal split summary */}
+          {splitType === 'equal' && amountCents > 0 && selectedCount > 0 && (
             <div style={{
-              marginTop: 12, display: 'flex', alignItems: 'center',
-              justifyContent: 'space-between',
-              background: splitOk ? '#E9F9F0' : '#FFF0ED',
-              borderRadius: 14, padding: '13px 16px',
+              marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: '#E9F9F0', borderRadius: 12, padding: '11px 14px',
             }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: splitOk ? '#0E8F5C' : '#E0431F' }}>
-                {splitOk ? 'Total correto ✓' : 'Faltam distribuir'}
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#0E8F5C' }}>
+                R$ {fmt(equalShareCents)} por pessoa
               </span>
-              <span style={{ fontSize: 13, fontWeight: 800, color: splitOk ? '#0E8F5C' : '#E0431F' }}>
+              <span style={{ fontSize: 12, color: '#3BA877' }}>
+                {selectedCount} pessoas · Total correto ✓
+              </span>
+            </div>
+          )}
+
+          {/* Custom split live feedback */}
+          {splitType === 'custom' && amountCents > 0 && (
+            <div style={{
+              marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: splitOk ? '#E9F9F0' : diffCents < 0 ? '#FFF0ED' : '#FFFBEC',
+              border: `1px solid ${splitOk ? '#BEE9D2' : diffCents < 0 ? '#FFD6CC' : '#FFE99A'}`,
+              borderRadius: 12, padding: '11px 14px',
+            }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: splitOk ? '#0E8F5C' : diffCents < 0 ? '#E0431F' : '#B07D00' }}>
                 {splitOk
-                  ? `R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                  : `R$ ${Math.abs(total - customSum).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                }
+                  ? 'Total correto ✓'
+                  : diffCents > 0
+                  ? `Faltam distribuir`
+                  : `Excede o total`}
+              </span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: splitOk ? '#0E8F5C' : diffCents < 0 ? '#E0431F' : '#B07D00' }}>
+                {splitOk
+                  ? `R$ ${fmt(amountCents)}`
+                  : `R$ ${fmt(Math.abs(diffCents))}`}
               </span>
             </div>
           )}
         </div>
       )}
 
-      {/* Error */}
-      {error && (
-        <p style={{ marginTop: 12, fontSize: 13, fontWeight: 600, color: '#E0431F' }}>{error}</p>
-      )}
+      {/* Toast */}
+      <div style={{
+        position: 'fixed', top: 24, left: 22, right: 22, zIndex: 100,
+        pointerEvents: 'none',
+        transition: 'opacity .25s, transform .25s',
+        opacity: toastMsg ? 1 : 0,
+        transform: toastMsg ? 'translateY(0)' : 'translateY(-12px)',
+      }}>
+        <div style={{
+          background: '#1A1A1F', color: '#fff', borderRadius: 14,
+          padding: '13px 18px', display: 'flex', alignItems: 'center', gap: 10,
+          boxShadow: '0 8px 24px rgba(0,0,0,.22)',
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+            <circle cx="12" cy="12" r="10" stroke="#FF5436" strokeWidth="2"/>
+            <path d="M12 8v4M12 16h.01" stroke="#FF5436" strokeWidth="2.2" strokeLinecap="round"/>
+          </svg>
+          <span style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.3 }}>{toastMsg}</span>
+        </div>
+      </div>
 
       {/* Sticky submit */}
       <div style={{
@@ -335,19 +430,18 @@ export default function DebtForm({ groupId }: DebtFormProps) {
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={!canSubmit}
           style={{
             width: '100%', textAlign: 'center', padding: 16,
-            borderRadius: 16, fontWeight: 800, fontSize: 16, cursor: canSubmit ? 'pointer' : 'not-allowed',
-            border: 'none',
-            background: canSubmit
+            borderRadius: 16, fontWeight: 800, fontSize: 16,
+            cursor: 'pointer', border: 'none',
+            background: canSubmit || !submitAttempted
               ? 'linear-gradient(135deg,#FF5436,#FF8A3D)'
               : '#ECECF0',
-            color: canSubmit ? '#fff' : '#9A9AA4',
-            boxShadow: canSubmit ? '0 8px 18px rgba(255,84,54,.3)' : 'none',
+            color: canSubmit || !submitAttempted ? '#fff' : '#9A9AA4',
+            boxShadow: canSubmit || !submitAttempted ? '0 8px 18px rgba(255,84,54,.3)' : 'none',
           }}
         >
-          {canSubmit ? 'Registrar dívida' : 'Preencha os campos acima'}
+          Registrar dívida
         </button>
       </div>
     </div>

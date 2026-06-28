@@ -52,13 +52,13 @@ export default function DashboardPage() {
         if (inst.status === 'paid') continue
 
         if (debt.paidByUserId === currentUser.id && inst.debtorUserId !== currentUser.id) {
-          balanceMap.set(inst.debtorUserId, (balanceMap.get(inst.debtorUserId) ?? 0) + inst.amount)
+          balanceMap.set(inst.debtorUserId, (balanceMap.get(inst.debtorUserId) ?? 0) + inst.amountCents)
           myCredit.push({
             installmentId: inst.id,
             debtId: debt.id,
             description: debt.description,
             groupName: grp?.name ?? '',
-            amount: inst.amount,
+            amountCents: inst.amountCents,
             status: inst.status,
             debtorName: inst.debtor.name,
             debtorId: inst.debtorUserId,
@@ -66,13 +66,13 @@ export default function DashboardPage() {
         }
 
         if (inst.debtorUserId === currentUser.id && debt.paidByUserId !== currentUser.id) {
-          balanceMap.set(debt.paidByUserId, (balanceMap.get(debt.paidByUserId) ?? 0) - inst.amount)
+          balanceMap.set(debt.paidByUserId, (balanceMap.get(debt.paidByUserId) ?? 0) - inst.amountCents)
           myOwed.push({
             installmentId: inst.id,
             debtId: debt.id,
             description: debt.description,
             groupName: grp?.name ?? '',
-            amount: inst.amount,
+            amountCents: inst.amountCents,
             status: inst.status,
             creditorName: creditor?.name ?? '—',
             creditorId: debt.paidByUserId,
@@ -90,14 +90,14 @@ export default function DashboardPage() {
       if (!user) continue
       if (balance > 0) totalOwed += balance
       else totalOwing += Math.abs(balance)
-      friendBalances.push({ user, balance })
+      friendBalances.push({ user, balanceCents: balance })
     }
 
     return {
       totalOwed, totalOwing,
-      friendBalances: friendBalances.sort((a, b) => b.balance - a.balance),
-      myOwed: myOwed.sort((a, b) => b.amount - a.amount),
-      myCredit: myCredit.sort((a, b) => b.amount - a.amount),
+      friendBalances: friendBalances.sort((a, b) => b.balanceCents - a.balanceCents),
+      myOwed: myOwed.sort((a, b) => b.amountCents - a.amountCents),
+      myCredit: myCredit.sort((a, b) => b.amountCents - a.amountCents),
     }
   }, [currentUser, debts, groups])
 
@@ -256,7 +256,7 @@ export default function DashboardPage() {
           <div style={{ background: '#fff', borderRadius: 22, padding: 4, boxShadow: '0 2px 12px rgba(0,0,0,.04)' }}>
             {friendBalances.map((fb, i) => {
               const av = avatarFor(fb.user.id)
-              const isPos = fb.balance > 0
+              const isPos = fb.balanceCents > 0
               return (
                 <div key={fb.user.id} style={{
                   display: 'flex', alignItems: 'center', gap: 12,
@@ -276,7 +276,7 @@ export default function DashboardPage() {
                     <div style={{ fontSize: 11.5, color: '#9A9AA4' }}>{isPos ? 'te deve' : 'você deve'}</div>
                   </div>
                   <div style={{ fontWeight: 800, fontSize: 14.5, color: isPos ? '#0E8F5C' : '#FF5436', whiteSpace: 'nowrap' }}>
-                    {isPos ? '+' : '−'}{formatCurrency(Math.abs(fb.balance))}
+                    {isPos ? '+' : '−'}{formatCurrency(Math.abs(fb.balanceCents))}
                   </div>
                 </div>
               )
@@ -338,7 +338,7 @@ interface OwedItem {
   debtId: string
   description: string
   groupName: string
-  amount: number
+  amountCents: number
   status: string
   creditorName: string
   creditorId: string
@@ -349,7 +349,7 @@ interface CreditItem {
   debtId: string
   description: string
   groupName: string
-  amount: number
+  amountCents: number
   status: string
   debtorName: string
   debtorId: string
@@ -381,7 +381,7 @@ function OwedCard({ item, onOpen }: { item: OwedItem; onOpen: () => void }) {
           </div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ fontWeight: 800, fontSize: 16, color: '#FF5436' }}>{formatCurrency(item.amount)}</div>
+          <div style={{ fontWeight: 800, fontSize: 16, color: '#FF5436' }}>{formatCurrency(item.amountCents)}</div>
           <div style={{ fontSize: 11, fontWeight: 800, marginTop: 1, color: isAwaiting ? '#B57400' : '#FF5436' }}>
             {isAwaiting ? 'Aguardando' : 'Pendente'}
           </div>
@@ -435,7 +435,7 @@ function CreditCard({ item, onCharge, onOpen }: { item: CreditItem; onCharge: ()
           </div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ fontWeight: 800, fontSize: 16, color: '#0E8F5C' }}>{formatCurrency(item.amount)}</div>
+          <div style={{ fontWeight: 800, fontSize: 16, color: '#0E8F5C' }}>{formatCurrency(item.amountCents)}</div>
           <div style={{ fontSize: 11, fontWeight: 800, marginTop: 1, color: isAwaiting ? '#B57400' : '#9A9AA4' }}>
             {isAwaiting ? 'Revisão' : 'Pendente'}
           </div>

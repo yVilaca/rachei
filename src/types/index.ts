@@ -35,7 +35,7 @@ export interface Debt {
   id: string
   groupId: string
   description: string
-  totalAmount: number
+  totalAmountCents: number
   paidByUserId: string
   splitType: SplitType
   createdBy: string
@@ -47,7 +47,7 @@ export interface Installment {
   id: string
   debtId: string
   debtorUserId: string
-  amount: number
+  amountCents: number
   status: InstallmentStatus
   paidAt?: string
   confirmedAt?: string
@@ -74,13 +74,13 @@ export interface ChargeLink {
 export interface NewDebtInput {
   groupId: string
   description: string
-  totalAmount: number
+  totalAmountCents: number
   paidByUserId: string
   splitType: SplitType
-  debtors: { userId: string; amount: number }[]
+  debtors: { userId: string; amountCents: number }[]
 }
 
 export interface FriendBalance {
   user: User
-  balance: number // positive = they owe me, negative = I owe them
+  balanceCents: number // positive = they owe me, negative = I owe them
 }

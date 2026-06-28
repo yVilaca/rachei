@@ -32,7 +32,7 @@ export default function InstallmentRow({ installment, creditorId, isLast }: Inst
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-[#1A1A1F] truncate">{installment.debtor.name}</p>
           <div className="mt-1 flex items-center gap-2">
-            <p className="text-sm font-extrabold text-[#1A1A1F]">{formatCurrency(installment.amount)}</p>
+            <p className="text-sm font-extrabold text-[#1A1A1F]">{formatCurrency(installment.amountCents)}</p>
             <StatusBadge status={installment.status} />
           </div>
           <div className="mt-2 flex gap-2">

@@ -7,8 +7,8 @@ interface FriendRowProps {
 }
 
 export default function FriendRow({ friendBalance, isLast }: FriendRowProps) {
-  const { user, balance } = friendBalance
-  const isPositive = balance > 0
+  const { user, balanceCents } = friendBalance
+  const isPositive = balanceCents > 0
 
   return (
     <>
@@ -25,7 +25,7 @@ export default function FriendRow({ friendBalance, isLast }: FriendRowProps) {
           <p className="text-xs text-muted">{isPositive ? 'te deve' : 'você deve'}</p>
         </div>
         <p className={`text-sm font-extrabold ${isPositive ? 'text-positive' : 'text-brand'}`}>
-          {isPositive ? '+' : '−'}{formatCurrency(Math.abs(balance))}
+          {isPositive ? '+' : '−'}{formatCurrency(Math.abs(balanceCents))}
         </p>
       </div>
       {!isLast && <div className="mx-4 h-px bg-[#F0F0F3]" />}

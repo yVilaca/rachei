@@ -26,8 +26,8 @@ export default function GroupsPage() {
       for (const debt of groupDebts) {
         for (const inst of debt.installments) {
           if (inst.status === 'paid') continue
-          if (debt.paidByUserId === currentUser.id && inst.debtorUserId !== currentUser.id) net += inst.amount
-          if (inst.debtorUserId === currentUser.id && debt.paidByUserId !== currentUser.id) net -= inst.amount
+          if (debt.paidByUserId === currentUser.id && inst.debtorUserId !== currentUser.id) net += inst.amountCents
+          if (inst.debtorUserId === currentUser.id && debt.paidByUserId !== currentUser.id) net -= inst.amountCents
         }
       }
       map[group.id] = net

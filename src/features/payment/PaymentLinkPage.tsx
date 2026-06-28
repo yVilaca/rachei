@@ -89,7 +89,7 @@ export default function PaymentLinkPage() {
           <div className="mt-3 flex items-center justify-between">
             <div>
               <p className="text-xs text-muted">Sua parte</p>
-              <p className="font-heading text-2xl font-extrabold text-brand">{formatCurrency(installment.amount)}</p>
+              <p className="font-heading text-2xl font-extrabold text-brand">{formatCurrency(installment.amountCents)}</p>
             </div>
             <StatusBadge status={installment.status} />
           </div>

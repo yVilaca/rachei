@@ -82,7 +82,7 @@ function CreditorView({ debt, group, currentUser }: { debt: Debt; group?: Group;
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <div>
             <div style={{ fontSize: 11, opacity: .85 }}>Valor total</div>
-            <div style={{ fontWeight: 800, fontSize: 19 }}>{formatCurrency(debt.totalAmount)}</div>
+            <div style={{ fontWeight: 800, fontSize: 19 }}>{formatCurrency(debt.totalAmountCents)}</div>
           </div>
           <div style={{ width: 1, height: 30, background: 'rgba(255,255,255,.3)' }} />
           <div>
@@ -221,7 +221,7 @@ function DebtorView({
             color: isPaid ? '#0E8F5C' : '#FF5436',
             lineHeight: 1.05, marginBottom: 16,
           }}>
-            {formatCurrency(installment.amount)}
+            {formatCurrency(installment.amountCents)}
           </div>
 
           {/* Para quem */}
@@ -355,8 +355,8 @@ function DebtorView({
             ['Grupo', group?.name ?? '—'],
             ['Data', formatDate(debt.createdAt)],
             ['Divisão', debt.splitType === 'equal' ? 'Igualitária' : 'Personalizada'],
-            ['Total da despesa', formatCurrency(debt.totalAmount)],
-            ['Sua parte', formatCurrency(installment.amount)],
+            ['Total da despesa', formatCurrency(debt.totalAmountCents)],
+            ['Sua parte', formatCurrency(installment.amountCents)],
           ] as [string, string][]).map(([label, value], i, arr) => (
             <div key={label} style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -416,7 +416,7 @@ function DebtorView({
                           <div style={{ fontSize: 13.5, fontWeight: 700, color: '#1A1A1F' }}>{inst.debtor.name}</div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: 13, fontWeight: 800, color: '#15151A' }}>{formatCurrency(inst.amount)}</div>
+                          <div style={{ fontSize: 13, fontWeight: 800, color: '#15151A' }}>{formatCurrency(inst.amountCents)}</div>
                           <div style={{ fontSize: 11, fontWeight: 800, color: st.color }}>{st.label}</div>
                         </div>
                       </div>
@@ -528,7 +528,7 @@ function CreditorInstallmentCard({ installment, isOwn, onCharge, onConfirm, onRe
           <div style={{ fontSize: 11.5, color: '#9A9AA4', marginTop: 1 }}>{st.sub}</div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ fontWeight: 800, fontSize: 16, color: '#15151A' }}>{formatCurrency(installment.amount)}</div>
+          <div style={{ fontWeight: 800, fontSize: 16, color: '#15151A' }}>{formatCurrency(installment.amountCents)}</div>
           <div style={{ fontSize: 11, fontWeight: 800, color: st.color, marginTop: 1 }}>{st.label}</div>
         </div>
       </div>

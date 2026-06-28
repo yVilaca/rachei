@@ -48,7 +48,6 @@ export default function DebtForm({ groupId }: DebtFormProps) {
   useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current) }, [])
 
   // ── derived ──────────────────────────────────────────────────────────────
-  const total = amountCents / 100
   const selectedCount = selectedDebtors.length
   const equalShareCents = selectedCount > 0 ? Math.floor(amountCents / selectedCount) : 0
   // Distribute rounding remainder to first debtor
@@ -117,12 +116,12 @@ export default function DebtForm({ groupId }: DebtFormProps) {
 
     const debtors = selectedDebtors.map((userId, idx) => ({
       userId,
-      amount: splitType === 'equal'
-        ? (equalShareCents + (idx === 0 ? equalRemainder : 0)) / 100
-        : (customCents[userId] ?? 0) / 100,
+      amountCents: splitType === 'equal'
+        ? equalShareCents + (idx === 0 ? equalRemainder : 0)
+        : customCents[userId] ?? 0,
     }))
 
-    addDebt({ groupId, description, totalAmount: total, paidByUserId, splitType, debtors })
+    addDebt({ groupId, description, totalAmountCents: amountCents, paidByUserId, splitType, debtors })
     navigate(`/grupos/${groupId}`)
   }
 

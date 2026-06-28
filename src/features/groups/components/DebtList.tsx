@@ -111,7 +111,7 @@ export default function DebtList({ debts, group }: DebtListProps) {
                   </div>
                 </div>
                 <div style={{ fontWeight: 800, fontSize: 15, color: '#15151A', flexShrink: 0, paddingTop: 2 }}>
-                  {formatCurrency(debt.totalAmount)}
+                  {formatCurrency(debt.totalAmountCents)}
                 </div>
               </div>
 

@@ -42,7 +42,7 @@ export default function GroupsPage() {
   return (
     <div
       className="no-scrollbar min-h-dvh overflow-auto"
-      style={{ background: '#F5F5F8', padding: '22px 20px 110px', fontFamily: '"Plus Jakarta Sans", sans-serif' }}
+      style={{ background: '#F5F5F8', padding: '52px 20px 110px', fontFamily: '"Plus Jakarta Sans", sans-serif' }}
     >
       {/* Title */}
       <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 28, color: '#15151A', letterSpacing: '-0.02em', marginBottom: 4 }}>

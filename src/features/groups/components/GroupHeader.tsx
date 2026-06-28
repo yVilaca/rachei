@@ -19,7 +19,7 @@ export default function GroupHeader({ group, groupBalance }: GroupHeaderProps) {
     : 'saldo zerado'
 
   return (
-    <div style={{ padding: '14px 20px 0' }}>
+    <div style={{ padding: '52px 20px 0' }}>
       {/* Back */}
       <button
         onClick={() => navigate(-1)}

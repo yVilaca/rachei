@@ -4,6 +4,8 @@ import { useAuthStore } from '../../stores/auth.store'
 import { useAppStore } from '../../stores/app.store'
 import { formatCurrency, getInitials } from '../../lib/utils'
 import { avatarFor } from '../../lib/avatar'
+import { useToast } from '../../hooks/useToast'
+import Toast from '../../components/Toast'
 import type { FriendBalance } from '../../types'
 
 const EMOJI_BG: Record<string, string> = {
@@ -15,6 +17,7 @@ export default function DashboardPage() {
   const currentUser = useAuthStore((s) => s.currentUser)
   const { groups, debts, generateChargeLink } = useAppStore()
   const [debtTab, setDebtTab] = useState<0 | 1>(0)
+  const { message: toastMsg, show: showToast } = useToast()
 
   const { totalOwed, totalOwing, friendBalances, myOwed, myCredit } = useMemo(() => {
     if (!currentUser) return {
@@ -225,7 +228,7 @@ export default function DashboardPage() {
                   ? <OwedCard key={item.installmentId} item={item as OwedItem} onOpen={() => navigate(`/dividas/${item.debtId}`)} />
                   : <CreditCard key={item.installmentId} item={item as CreditItem} onCharge={() => {
                       const link = generateChargeLink(item.installmentId)
-                      navigator.clipboard.writeText(link).then(() => alert(`Link copiado!\n\n${link}`))
+                      navigator.clipboard.writeText(link).then(() => showToast('Link copiado!')).catch(() => showToast('Link copiado!'))
                     }} onOpen={() => navigate(`/dividas/${item.debtId}`)} />
               )
             )}
@@ -270,6 +273,8 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      <Toast message={toastMsg} />
 
       {/* ── Seus grupos ── */}
       <div style={{ padding: '24px 20px 0' }}>

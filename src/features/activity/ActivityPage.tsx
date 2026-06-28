@@ -36,11 +36,8 @@ const EVENT_STYLE: Record<EventType, { icon: string; bg: string; color: string }
 
 // ── Date helpers ───────────────────────────────────────────────────────────────
 
-const NOW = new Date('2026-06-28T12:00:00Z')
-
 function relativeDate(iso: string): string {
-  const d = new Date(iso)
-  const diffMs = NOW.getTime() - d.getTime()
+  const diffMs = Date.now() - new Date(iso).getTime()
   const diffMin = Math.floor(diffMs / 60000)
   const diffH = Math.floor(diffMs / 3600000)
   const diffD = Math.floor(diffMs / 86400000)
@@ -53,8 +50,7 @@ function relativeDate(iso: string): string {
 }
 
 function dateGroup(iso: string): string {
-  const d = new Date(iso)
-  const diffD = Math.floor((NOW.getTime() - d.getTime()) / 86400000)
+  const diffD = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)
   if (diffD === 0) return 'Hoje'
   if (diffD === 1) return 'Ontem'
   if (diffD < 7) return 'Esta semana'

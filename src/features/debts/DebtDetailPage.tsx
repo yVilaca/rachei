@@ -4,6 +4,8 @@ import { useAppStore } from '../../stores/app.store'
 import { useAuthStore } from '../../stores/auth.store'
 import { formatCurrency, formatDate, getInitials } from '../../lib/utils'
 import { avatarFor } from '../../lib/avatar'
+import { useToast } from '../../hooks/useToast'
+import Toast from '../../components/Toast'
 import type { Debt, Group, Installment, User } from '../../types'
 
 // ── Root ───────────────────────────────────────────────────────────────────────
@@ -40,6 +42,7 @@ export default function DebtDetailPage() {
 function CreditorView({ debt, group, currentUser }: { debt: Debt; group?: Group; currentUser: User }) {
   const navigate = useNavigate()
   const { generateChargeLink, updateInstallmentStatus } = useAppStore()
+  const { message: toastMsg, show: showToast } = useToast()
 
   const creditorName = 'Você'
   const splitLabel = debt.splitType === 'equal' ? 'Igualitária' : 'Personalizada'
@@ -47,6 +50,7 @@ function CreditorView({ debt, group, currentUser }: { debt: Debt; group?: Group;
 
   return (
     <div style={{ minHeight: '100dvh', background: '#F5F5F8', fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
+      <Toast message={toastMsg} />
       {/* Coral header */}
       <div style={{ background: 'linear-gradient(150deg,#FF5436,#FF8A3D)', padding: '52px 20px 26px', color: '#fff' }}>
         <button onClick={() => navigate(-1)} style={{
@@ -110,7 +114,7 @@ function CreditorView({ debt, group, currentUser }: { debt: Debt; group?: Group;
               index={idx}
               onCharge={() => {
                 const link = generateChargeLink(inst.id)
-                navigator.clipboard.writeText(link).then(() => alert(`Link copiado!\n\n${link}`))
+                navigator.clipboard.writeText(link).then(() => showToast('Link copiado!')).catch(() => showToast('Link copiado!'))
               }}
               onConfirm={() => updateInstallmentStatus(inst.id, 'paid')}
               onReject={() => updateInstallmentStatus(inst.id, 'pending')}

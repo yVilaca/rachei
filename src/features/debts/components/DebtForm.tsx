@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../../stores/auth.store'
 import { useAppStore } from '../../../stores/app.store'
 import { getInitials } from '../../../lib/utils'
+import { useToast } from '../../../hooks/useToast'
+import Toast from '../../../components/Toast'
 import type { SplitType } from '../../../types'
 
 interface DebtFormProps {
@@ -37,15 +39,7 @@ export default function DebtForm({ groupId }: DebtFormProps) {
   const [touchedDesc, setTouchedDesc] = useState(false)
   const [touchedAmount, setTouchedAmount] = useState(false)
   const [submitAttempted, setSubmitAttempted] = useState(false)
-  const [toastMsg, setToastMsg] = useState<string | null>(null)
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const showToast = (msg: string) => {
-    if (toastTimer.current) clearTimeout(toastTimer.current)
-    setToastMsg(msg)
-    toastTimer.current = setTimeout(() => setToastMsg(null), 3500)
-  }
-  useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current) }, [])
+  const { message: toastMsg, show: showToast } = useToast()
 
   // ── derived ──────────────────────────────────────────────────────────────
   const selectedCount = selectedDebtors.length
@@ -398,26 +392,7 @@ export default function DebtForm({ groupId }: DebtFormProps) {
         </div>
       )}
 
-      {/* Toast */}
-      <div style={{
-        position: 'fixed', top: 24, left: 22, right: 22, zIndex: 100,
-        pointerEvents: 'none',
-        transition: 'opacity .25s, transform .25s',
-        opacity: toastMsg ? 1 : 0,
-        transform: toastMsg ? 'translateY(0)' : 'translateY(-12px)',
-      }}>
-        <div style={{
-          background: '#1A1A1F', color: '#fff', borderRadius: 14,
-          padding: '13px 18px', display: 'flex', alignItems: 'center', gap: 10,
-          boxShadow: '0 8px 24px rgba(0,0,0,.22)',
-        }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
-            <circle cx="12" cy="12" r="10" stroke="#FF5436" strokeWidth="2"/>
-            <path d="M12 8v4M12 16h.01" stroke="#FF5436" strokeWidth="2.2" strokeLinecap="round"/>
-          </svg>
-          <span style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.3 }}>{toastMsg}</span>
-        </div>
-      </div>
+      <Toast message={toastMsg} />
 
       {/* Sticky submit */}
       <div style={{

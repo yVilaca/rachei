@@ -1,14 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { getInitials, formatCurrency } from '../../../lib/utils'
+import { avatarFor } from '../../../lib/avatar'
 import type { Group } from '../../../types'
-
-const AVATAR_COLORS = [
-  { bg: '#FFE0D2', fg: '#E0431F' },
-  { bg: '#D2E8FF', fg: '#1A6FC4' },
-  { bg: '#D2F5E5', fg: '#0E8F5C' },
-  { bg: '#F5D2FF', fg: '#8B1AC4' },
-  { bg: '#FFF3D2', fg: '#C47A1A' },
-]
 
 interface GroupHeaderProps {
   group: Group
@@ -63,8 +56,8 @@ export default function GroupHeader({ group, groupBalance }: GroupHeaderProps) {
 
       {/* Overlapping member avatars */}
       <div style={{ display: 'flex', alignItems: 'center', marginTop: 14 }}>
-        {group.members.map((m, i) => {
-          const c = AVATAR_COLORS[i % AVATAR_COLORS.length]
+        {group.members.map((m) => {
+          const c = avatarFor(m.userId)
           return (
             <div
               key={m.userId}

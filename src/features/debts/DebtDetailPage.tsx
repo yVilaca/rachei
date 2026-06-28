@@ -3,24 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAppStore } from '../../stores/app.store'
 import { useAuthStore } from '../../stores/auth.store'
 import { formatCurrency, formatDate, getInitials } from '../../lib/utils'
+import { avatarFor } from '../../lib/avatar'
 import type { Debt, Group, Installment, User } from '../../types'
-
-// ── Avatar palette ─────────────────────────────────────────────────────────────
-
-const AVATAR_PALETTE = [
-  { bg: '#FFF0ED', fg: '#FF5436' },
-  { bg: '#EDF4FF', fg: '#2563EB' },
-  { bg: '#E9F9F0', fg: '#0E8F5C' },
-  { bg: '#FFF8EE', fg: '#B57400' },
-  { bg: '#F0EDFF', fg: '#7C3AED' },
-  { bg: '#FFF0F8', fg: '#DB2777' },
-]
-
-function avatarFor(id: string) {
-  let h = 0
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0
-  return AVATAR_PALETTE[h % AVATAR_PALETTE.length]
-}
 
 // ── Root ───────────────────────────────────────────────────────────────────────
 

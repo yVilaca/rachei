@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import type { Group, Debt, Installment, InstallmentStatus, NewDebtInput } from '../types'
 import { MOCK_GROUPS, MOCK_DEBTS, MOCK_USERS } from '../lib/mock-data'
 import { generateToken } from '../lib/utils'
@@ -16,7 +17,9 @@ interface AppStore {
   markAllEventsRead: (ids: string[]) => void
 }
 
-export const useAppStore = create<AppStore>()((set, get) => ({
+export const useAppStore = create<AppStore>()(
+  persist(
+    (set, get) => ({
   groups: MOCK_GROUPS,
   debts: MOCK_DEBTS,
   readEventIds: new Set<string>(),
@@ -103,4 +106,14 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
   markAllEventsRead: (ids: string[]) =>
     set((state) => ({ readEventIds: new Set([...state.readEventIds, ...ids]) })),
-}))
+    }),
+    {
+      name: 'rachei-app',
+      partialize: (state) => ({ readEventIds: [...state.readEventIds] }),
+      merge: (persisted, current) => ({
+        ...current,
+        readEventIds: new Set((persisted as { readEventIds?: string[] }).readEventIds ?? []),
+      }),
+    }
+  )
+)

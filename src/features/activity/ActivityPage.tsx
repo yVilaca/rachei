@@ -68,7 +68,7 @@ const GROUP_ORDER = ['Hoje', 'Ontem', 'Esta semana', 'Mais antigo']
 export default function ActivityPage() {
   const navigate = useNavigate()
   const currentUser = useAuthStore((s) => s.currentUser)
-  const { debts, groups } = useAppStore()
+  const { debts, groups, readEventIds, markEventRead, markAllEventsRead } = useAppStore()
   const [tab, setTab] = useState<'all' | 'action'>('all')
 
   const events = useMemo<ActivityEvent[]>(() => {
@@ -184,7 +184,8 @@ export default function ActivityPage() {
     return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   }, [currentUser, debts, groups])
 
-  const actionCount = events.filter((e) => e.actionable).length
+  const unreadCount = events.filter((e) => !readEventIds.has(e.id)).length
+  const actionCount = events.filter((e) => e.actionable && !readEventIds.has(e.id)).length
   const filtered = tab === 'action' ? events.filter((e) => e.actionable) : events
 
   // Group by date section
@@ -204,11 +205,26 @@ export default function ActivityPage() {
       style={{ background: '#F5F5F8', padding: '52px 20px 110px', fontFamily: '"Plus Jakarta Sans", sans-serif' }}
     >
       {/* Header */}
-      <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 28, color: '#15151A', letterSpacing: '-.02em', marginBottom: 4 }}>
-        Atividade
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
+        <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 28, color: '#15151A', letterSpacing: '-.02em' }}>
+          Atividade
+        </div>
+        {unreadCount > 0 && (
+          <button
+            onClick={() => markAllEventsRead(events.map((e) => e.id))}
+            style={{
+              marginTop: 6, fontSize: 12.5, fontWeight: 700, color: '#FF5436',
+              background: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
+            }}
+          >
+            Marcar tudo como lido
+          </button>
+        )}
       </div>
       <div style={{ fontSize: 13, color: '#9A9AA4', marginBottom: 18 }}>
-        {events.length} evento{events.length !== 1 ? 's' : ''} recente{events.length !== 1 ? 's' : ''}
+        {unreadCount > 0
+          ? `${unreadCount} não lida${unreadCount !== 1 ? 's' : ''}`
+          : `${events.length} evento${events.length !== 1 ? 's' : ''} · tudo lido`}
       </div>
 
       {/* Filter tabs */}
@@ -269,7 +285,18 @@ export default function ActivityPage() {
               {label}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {items.map((ev) => <EventCard key={ev.id} event={ev} onOpen={() => ev.debtId && navigate(`/dividas/${ev.debtId}`)} />)}
+              {items.map((ev) => (
+                <EventCard
+                  key={ev.id}
+                  event={ev}
+                  isRead={readEventIds.has(ev.id)}
+                  onOpen={() => {
+                    markEventRead(ev.id)
+                    if (ev.debtId) navigate(`/dividas/${ev.debtId}`)
+                  }}
+                  onMarkRead={() => markEventRead(ev.id)}
+                />
+              ))}
             </div>
           </div>
         ))
@@ -280,7 +307,14 @@ export default function ActivityPage() {
 
 // ── EventCard ──────────────────────────────────────────────────────────────────
 
-function EventCard({ event, onOpen }: { event: ActivityEvent; onOpen: () => void }) {
+interface CardProps {
+  event: ActivityEvent
+  isRead: boolean
+  onOpen: () => void
+  onMarkRead: () => void
+}
+
+function EventCard({ event, isRead, onOpen, onMarkRead }: CardProps) {
   const style = EVENT_STYLE[event.type]
 
   const ACTION_LABEL: Partial<Record<EventType, string>> = {
@@ -290,27 +324,53 @@ function EventCard({ event, onOpen }: { event: ActivityEvent; onOpen: () => void
   }
 
   const actionLabel = ACTION_LABEL[event.type]
+  const showUnread = !isRead
 
   return (
-    <div style={{
-      background: '#fff', borderRadius: 16, padding: 14,
-      boxShadow: '0 2px 10px rgba(0,0,0,.04)',
-      border: event.actionable ? `1.5px solid ${style.bg}` : '1.5px solid transparent',
-    }}>
+    <div
+      onClick={() => { if (isRead) return; onMarkRead() }}
+      style={{
+        background: showUnread ? '#fff' : '#FAFAFC',
+        borderRadius: 16, padding: 14,
+        boxShadow: showUnread ? '0 2px 10px rgba(0,0,0,.06)' : '0 1px 4px rgba(0,0,0,.03)',
+        border: showUnread && event.actionable
+          ? `1.5px solid ${style.bg}`
+          : `1.5px solid ${showUnread ? '#EBEBEF' : 'transparent'}`,
+        position: 'relative',
+        cursor: showUnread ? 'default' : 'default',
+        transition: 'background .2s',
+      }}
+    >
+      {/* Unread left bar */}
+      {showUnread && (
+        <div style={{
+          position: 'absolute', left: 0, top: 10, bottom: 10,
+          width: 3, borderRadius: '0 3px 3px 0',
+          background: event.actionable ? '#FF5436' : '#C8C8D0',
+        }} />
+      )}
+
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 13 }}>
         {/* Icon */}
         <div style={{
           width: 42, height: 42, borderRadius: 13, flexShrink: 0,
-          background: style.bg,
+          background: isRead ? '#F0F0F4' : style.bg,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 19,
+          fontSize: 19, opacity: isRead ? 0.6 : 1,
+          transition: 'background .2s, opacity .2s',
         }}>
           {style.icon}
         </div>
 
         {/* Content */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: '#1A1A1F', lineHeight: 1.35 }}>
+          <div style={{
+            fontWeight: showUnread ? 700 : 600,
+            fontSize: 14,
+            color: isRead ? '#6B6B76' : '#1A1A1F',
+            lineHeight: 1.35,
+            transition: 'color .2s',
+          }}>
             {event.title}
           </div>
           <div style={{ fontSize: 12, color: '#9A9AA4', marginTop: 3, lineHeight: 1.4 }}>
@@ -318,16 +378,32 @@ function EventCard({ event, onOpen }: { event: ActivityEvent; onOpen: () => void
           </div>
         </div>
 
-        {/* Actionable dot */}
-        {event.actionable && (
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#FF5436', flexShrink: 0, marginTop: 4 }} />
-        )}
+        {/* Right side: unread dot OR "lida" tag */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+          {showUnread ? (
+            <div style={{ width: 9, height: 9, borderRadius: '50%', background: event.actionable ? '#FF5436' : '#C8C8D0', marginTop: 3 }} />
+          ) : (
+            <span style={{ fontSize: 10, fontWeight: 700, color: '#C0C0C8', marginTop: 4 }}>lida</span>
+          )}
+          {showUnread && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onMarkRead() }}
+              style={{
+                fontSize: 11, fontWeight: 700, color: '#9A9AA4',
+                background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Marcar lida
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* CTA button */}
-      {actionLabel && event.actionable && (
+      {/* CTA button — only for unread actionable */}
+      {actionLabel && event.actionable && !isRead && (
         <button
-          onClick={onOpen}
+          onClick={(e) => { e.stopPropagation(); onOpen() }}
           style={{
             marginTop: 12, width: '100%', padding: '10px',
             borderRadius: 11, fontWeight: 800, fontSize: 13.5,

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAppStore } from '../stores/app.store'
+import { useAuthStore } from '../stores/auth.store'
 
 const CORAL = '#FF5436'
 const GRAY = '#9A9AA4'
@@ -13,8 +14,21 @@ const EMOJI_BG: Record<string, string> = {
 export default function BottomNav() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const { groups } = useAppStore()
+  const { groups, debts, readEventIds } = useAppStore()
+  const currentUser = useAuthStore((s) => s.currentUser)
   const [sheetOpen, setSheetOpen] = useState(false)
+
+  // Dot: any actionable event not yet read
+  const hasUnread = currentUser != null && debts.some((debt) => {
+    const isCred = debt.paidByUserId === currentUser.id
+    return debt.installments.some((inst) => {
+      if (inst.status === 'awaiting_confirmation' && isCred)
+        return !readEventIds.has(`ev-proof-${inst.id}`)
+      if (inst.status === 'pending' && inst.debtorUserId === currentUser.id && !isCred)
+        return !readEventIds.has(`ev-pending-${inst.id}`)
+      return false
+    })
+  })
 
   const isHome = pathname === '/dashboard'
   const isGroups = pathname === '/grupos' || pathname.startsWith('/grupos/')
@@ -166,7 +180,7 @@ export default function BottomNav() {
             <path d="M10 21a2 2 0 004 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
           </svg>
           <span style={{ fontSize: 10, fontWeight: 700 }}>Atividade</span>
-          {!isActivity && (
+          {hasUnread && !isActivity && (
             <div style={{ position: 'absolute', top: -2, right: 4, width: 8, height: 8, borderRadius: '50%', background: CORAL, border: '1.5px solid #fff' }} />
           )}
         </button>

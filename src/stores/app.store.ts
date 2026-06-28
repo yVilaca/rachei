@@ -6,16 +6,20 @@ import { generateToken } from '../lib/utils'
 interface AppStore {
   groups: Group[]
   debts: Debt[]
+  readEventIds: Set<string>
   addDebt: (input: NewDebtInput) => void
   updateInstallmentStatus: (installmentId: string, status: InstallmentStatus, proofFileUrl?: string) => void
   generateChargeLink: (installmentId: string) => string
   getDebtsByGroup: (groupId: string) => Debt[]
   getInstallmentsByDebtor: (debtorUserId: string) => Installment[]
+  markEventRead: (id: string) => void
+  markAllEventsRead: (ids: string[]) => void
 }
 
 export const useAppStore = create<AppStore>()((set, get) => ({
   groups: MOCK_GROUPS,
   debts: MOCK_DEBTS,
+  readEventIds: new Set<string>(),
 
   addDebt: (input: NewDebtInput) => {
     const id = `debt-${Date.now()}`
@@ -93,4 +97,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
 
   getInstallmentsByDebtor: (debtorUserId: string) =>
     get().debts.flatMap((d) => d.installments.filter((i) => i.debtorUserId === debtorUserId)),
+
+  markEventRead: (id: string) =>
+    set((state) => ({ readEventIds: new Set([...state.readEventIds, id]) })),
+
+  markAllEventsRead: (ids: string[]) =>
+    set((state) => ({ readEventIds: new Set([...state.readEventIds, ...ids]) })),
 }))

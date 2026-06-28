@@ -111,7 +111,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '52px 20px 14px' }}>
         <div>
-          <div style={{ fontSize: 13, color: '#9A9AA4', fontWeight: 600 }}>Olá, {currentUser.name.split(' ')[0]} 👋</div>
+          <div style={{ fontSize: 13, color: '#6B6B76', fontWeight: 600 }}>Olá, {currentUser.name.split(' ')[0]} 👋</div>
           <div style={{ fontFamily: '"Bricolage Grotesque", sans-serif', fontWeight: 800, fontSize: 24, color: '#15151A', letterSpacing: '-.02em' }}>
             Seu saldo
           </div>
@@ -166,7 +166,7 @@ export default function DashboardPage() {
             <span style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 700, fontSize: 16, color: '#15151A' }}>
               Minhas dívidas
             </span>
-            <span style={{ fontSize: 12, color: '#9A9AA4', fontWeight: 600 }}>
+            <span style={{ fontSize: 12, color: '#6B6B76', fontWeight: 600 }}>
               {totalItems} ativa{totalItems !== 1 ? 's' : ''}
             </span>
           </div>
@@ -186,7 +186,7 @@ export default function DashboardPage() {
                     padding: '9px 8px', borderRadius: 11, fontWeight: 700, fontSize: 13,
                     cursor: 'pointer', border: 'none',
                     background: active ? '#fff' : 'transparent',
-                    color: active ? '#15151A' : '#9A9AA4',
+                    color: active ? '#15151A' : '#6B6B76',
                     boxShadow: active ? '0 1px 4px rgba(0,0,0,.1)' : 'none',
                   }}
                 >
@@ -218,7 +218,7 @@ export default function DashboardPage() {
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#15151A' }}>
                   {debtTab === 0 ? 'Nenhuma cobrança pendente' : 'Você não deve nada!'}
                 </div>
-                <div style={{ fontSize: 12, color: '#9A9AA4', marginTop: 3 }}>
+                <div style={{ fontSize: 12, color: '#6B6B76', marginTop: 3 }}>
                   {debtTab === 0 ? 'Quando alguém te dever, aparece aqui.' : 'Todas as suas parcelas estão quitadas.'}
                 </div>
               </div>
@@ -262,7 +262,7 @@ export default function DashboardPage() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 700, fontSize: 14.5, color: '#1A1A1F' }}>{fb.user.name}</div>
-                    <div style={{ fontSize: 11.5, color: '#9A9AA4' }}>{isPos ? 'te deve' : 'você deve'}</div>
+                    <div style={{ fontSize: 11.5, color: '#6B6B76' }}>{isPos ? 'te deve' : 'você deve'}</div>
                   </div>
                   <div style={{ fontWeight: 800, fontSize: 14.5, color: isPos ? '#0E8F5C' : '#FF5436', whiteSpace: 'nowrap' }}>
                     {isPos ? '+' : '−'}{formatCurrency(Math.abs(fb.balanceCents))}
@@ -311,7 +311,7 @@ export default function DashboardPage() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 15, color: '#1A1A1F' }}>{group.name}</div>
-                  <div style={{ fontSize: 12, color: '#9A9AA4', marginTop: 2 }}>{memberSub}</div>
+                  <div style={{ fontSize: 12, color: '#6B6B76', marginTop: 2 }}>{memberSub}</div>
                 </div>
               </button>
             )
@@ -367,7 +367,7 @@ function OwedCard({ item, onOpen }: { item: OwedItem; onOpen: () => void }) {
           <div style={{ fontWeight: 700, fontSize: 14.5, color: '#1A1A1F', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {item.description}
           </div>
-          <div style={{ fontSize: 11.5, color: '#9A9AA4', marginTop: 1 }}>
+          <div style={{ fontSize: 11.5, color: '#6B6B76', marginTop: 1 }}>
             {item.groupName} · você deve a {item.creditorName}
           </div>
         </div>
@@ -421,13 +421,13 @@ function CreditCard({ item, onCharge, onOpen }: { item: CreditItem; onCharge: ()
           <div style={{ fontWeight: 700, fontSize: 14.5, color: '#1A1A1F', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {item.description}
           </div>
-          <div style={{ fontSize: 11.5, color: '#9A9AA4', marginTop: 1 }}>
+          <div style={{ fontSize: 11.5, color: '#6B6B76', marginTop: 1 }}>
             {item.groupName} · {item.debtorName} te deve
           </div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
           <div style={{ fontWeight: 800, fontSize: 16, color: '#0E8F5C' }}>{formatCurrency(item.amountCents)}</div>
-          <div style={{ fontSize: 11, fontWeight: 800, marginTop: 1, color: isAwaiting ? '#B57400' : '#9A9AA4' }}>
+          <div style={{ fontSize: 11, fontWeight: 800, marginTop: 1, color: isAwaiting ? '#B57400' : '#6B6B76' }}>
             {isAwaiting ? 'Revisão' : 'Pendente'}
           </div>
         </div>

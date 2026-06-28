@@ -16,14 +16,19 @@ const TOGGLES = [
   { icon: '📅', label: 'Lembretes semanais' },
 ]
 
-function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+function Toggle({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) {
   return (
-    <div
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
       onClick={onToggle}
       style={{
         width: 46, height: 28, borderRadius: 999, cursor: 'pointer',
         background: on ? '#FF5436' : '#D8D8E0',
         position: 'relative', transition: 'background .2s', flexShrink: 0,
+        border: 'none', padding: 0,
       }}
     >
       <div style={{
@@ -34,7 +39,7 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
         boxShadow: '0 1px 3px rgba(0,0,0,.2)',
         transition: 'left .2s',
       }} />
-    </div>
+    </button>
   )
 }
 
@@ -78,7 +83,7 @@ export default function ProfilePage() {
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 800, fontSize: 18, color: '#15151A' }}>{user.name}</div>
-          <div style={{ fontSize: 13, color: '#9A9AA4', marginTop: 2 }}>{user.email}</div>
+          <div style={{ fontSize: 13, color: '#6B6B76', marginTop: 2 }}>{user.email}</div>
         </div>
         <span style={{
           padding: '5px 12px', borderRadius: 999,
@@ -145,18 +150,19 @@ export default function ProfilePage() {
           >
             <span style={{ fontSize: 18 }}>{t.icon}</span>
             <span style={{ flex: 1, fontWeight: 600, fontSize: 14.5, color: '#1A1A1F' }}>{t.label}</span>
-            <Toggle on={toggles[i]} onToggle={() => setToggles((prev) => prev.map((v, idx) => idx === i ? !v : v))} />
+            <Toggle on={toggles[i]} onToggle={() => setToggles((prev) => prev.map((v, idx) => idx === i ? !v : v))} label={t.label} />
           </div>
         ))}
       </div>
 
       {/* Logout */}
-      <div
+      <button
+        type="button"
         onClick={handleLogout}
-        style={{ marginTop: 18, textAlign: 'center', color: '#E0431F', fontWeight: 700, fontSize: 14.5, padding: 14, cursor: 'pointer' }}
+        style={{ marginTop: 18, width: '100%', textAlign: 'center', color: '#E0431F', fontWeight: 700, fontSize: 14.5, padding: 14, cursor: 'pointer', background: 'none', border: 'none' }}
       >
         Sair da conta
-      </div>
+      </button>
     </div>
   )
 }

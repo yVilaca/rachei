@@ -65,7 +65,7 @@ export default function DebtList({ debts, group }: DebtListProps) {
       {/* Debt cards */}
       <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {filtered.length === 0 && (
-          <p style={{ textAlign: 'center', fontSize: 13, color: '#9A9AA4', padding: '24px 0' }}>
+          <p style={{ textAlign: 'center', fontSize: 13, color: '#6B6B76', padding: '24px 0' }}>
             Nenhuma dívida encontrada
           </p>
         )}
@@ -105,7 +105,7 @@ export default function DebtList({ debts, group }: DebtListProps) {
                     <div style={{ fontWeight: 700, fontSize: 15, color: '#1A1A1F', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {debt.description}
                     </div>
-                    <div style={{ fontSize: 12, color: '#9A9AA4', marginTop: 2 }}>
+                    <div style={{ fontSize: 12, color: '#6B6B76', marginTop: 2 }}>
                       Pago por {payerName} · {formatDate(debt.createdAt)}
                     </div>
                   </div>
@@ -117,7 +117,7 @@ export default function DebtList({ debts, group }: DebtListProps) {
 
               {/* Bottom row */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
-                <span style={{ fontSize: 11.5, color: '#9A9AA4' }}>{progress}</span>
+                <span style={{ fontSize: 11.5, color: '#6B6B76' }}>{progress}</span>
                 <span style={{
                   padding: '4px 11px', borderRadius: 999,
                   fontSize: 11, fontWeight: 800,

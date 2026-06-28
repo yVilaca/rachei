@@ -19,7 +19,7 @@ export default function DebtDetailPage() {
   if (!debt || !currentUser) {
     return (
       <div style={{ display: 'flex', minHeight: '100dvh', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: '#9A9AA4' }}>Dívida não encontrada</p>
+        <p style={{ color: '#6B6B76' }}>Dívida não encontrada</p>
       </div>
     )
   }
@@ -93,7 +93,7 @@ function CreditorView({ debt, group, currentUser }: { debt: Debt; group?: Group;
           boxShadow: '0 2px 8px rgba(0,0,0,.04)', marginBottom: 16,
         }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, color: '#9A9AA4', fontWeight: 600 }}>Parcelas quitadas</div>
+            <div style={{ fontSize: 12, color: '#6B6B76', fontWeight: 600 }}>Parcelas quitadas</div>
             <div style={{ fontSize: 15, fontWeight: 800, color: '#15151A', marginTop: 2 }}>
               {paidCount} de {debt.installments.length}
             </div>
@@ -184,7 +184,7 @@ function DebtorView({
           </svg>
           Voltar
         </button>
-        <div style={{ fontSize: 12, color: '#9A9AA4', fontWeight: 600, marginBottom: 2 }}>{group?.name ?? ''}</div>
+        <div style={{ fontSize: 12, color: '#6B6B76', fontWeight: 600, marginBottom: 2 }}>{group?.name ?? ''}</div>
         <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 22, color: '#15151A', letterSpacing: '-.01em' }}>
           {debt.description}
         </div>
@@ -200,7 +200,7 @@ function DebtorView({
           border: isPaid ? '1.5px solid #BEE9D2' : isAwaiting ? '1.5px solid #FCE6C0' : '1.5px solid #FFE0D2',
           marginBottom: 14,
         }}>
-          <div style={{ fontSize: 13, color: '#9A9AA4', fontWeight: 600, marginBottom: 6 }}>
+          <div style={{ fontSize: 13, color: '#6B6B76', fontWeight: 600, marginBottom: 6 }}>
             {isPaid ? 'Você pagou' : 'Você deve'}
           </div>
           <div style={{
@@ -223,7 +223,7 @@ function DebtorView({
               {getInitials(creditorName)}
             </div>
             <div>
-              <div style={{ fontSize: 11, color: '#9A9AA4', fontWeight: 600 }}>{isPaid ? 'Confirmado por' : 'Para'}</div>
+              <div style={{ fontSize: 11, color: '#6B6B76', fontWeight: 600 }}>{isPaid ? 'Confirmado por' : 'Para'}</div>
               <div style={{ fontSize: 14.5, fontWeight: 700, color: '#1A1A1F' }}>{creditorName}</div>
             </div>
             <div style={{ marginLeft: 'auto' }}>
@@ -239,7 +239,7 @@ function DebtorView({
           boxShadow: '0 2px 8px rgba(0,0,0,.04)', marginBottom: 14,
         }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, color: '#9A9AA4', fontWeight: 600 }}>Progresso do grupo</div>
+            <div style={{ fontSize: 12, color: '#6B6B76', fontWeight: 600 }}>Progresso do grupo</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: '#15151A', marginTop: 2 }}>
               {paidCount} de {totalCount} pagaram
             </div>
@@ -352,7 +352,7 @@ function DebtorView({
               marginBottom: i < arr.length - 1 ? 11 : 0,
               borderBottom: i < arr.length - 1 ? '1px solid #F0F0F4' : 'none',
             }}>
-              <span style={{ fontSize: 13.5, color: '#9A9AA4' }}>{label}</span>
+              <span style={{ fontSize: 13.5, color: '#6B6B76' }}>{label}</span>
               <span style={{ fontSize: 13.5, fontWeight: 700, color: '#1A1A1F' }}>{value}</span>
             </div>
           ))}
@@ -372,10 +372,10 @@ function DebtorView({
                 Outros participantes
               </span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 12, color: '#9A9AA4' }}>{others.length}</span>
+                <span style={{ fontSize: 12, color: '#6B6B76' }}>{others.length}</span>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
                   style={{ transform: showOthers ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform .2s' }}>
-                  <path d="M3 5l4 4 4-4" stroke="#9A9AA4" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M3 5l4 4 4-4" stroke="#6B6B76" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
             </button>
@@ -439,7 +439,7 @@ function DebtorView({
               width: '100%', padding: 16, borderRadius: 16,
               fontWeight: 800, fontSize: 16, border: 'none', cursor: proofFile ? 'pointer' : 'not-allowed',
               background: proofFile ? 'linear-gradient(135deg,#FF5436,#FF8A3D)' : '#EBEBEF',
-              color: proofFile ? '#fff' : '#9A9AA4',
+              color: proofFile ? '#fff' : '#6B6B76',
               boxShadow: proofFile ? '0 8px 18px rgba(255,84,54,.3)' : 'none',
               transition: 'background .2s, box-shadow .2s',
             }}
@@ -447,7 +447,7 @@ function DebtorView({
             Enviar comprovante
           </button>
           {!proofFile && (
-            <div style={{ textAlign: 'center', fontSize: 12, color: '#9A9AA4', marginTop: 8 }}>
+            <div style={{ textAlign: 'center', fontSize: 12, color: '#6B6B76', marginTop: 8 }}>
               Anexe o comprovante para habilitar
             </div>
           )}
@@ -513,7 +513,7 @@ function CreditorInstallmentCard({ installment, isOwn, onCharge, onConfirm, onRe
           <div style={{ fontWeight: 700, fontSize: 15, color: '#1A1A1F' }}>
             {isOwn ? 'Você (sua parte)' : installment.debtor.name}
           </div>
-          <div style={{ fontSize: 11.5, color: '#9A9AA4', marginTop: 1 }}>{st.sub}</div>
+          <div style={{ fontSize: 11.5, color: '#6B6B76', marginTop: 1 }}>{st.sub}</div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
           <div style={{ fontWeight: 800, fontSize: 16, color: '#15151A' }}>{formatCurrency(installment.amountCents)}</div>

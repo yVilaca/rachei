@@ -149,7 +149,7 @@ export default function DebtForm({ groupId }: DebtFormProps) {
           border: `1.5px solid ${showAmountError ? '#E0431F' : '#ECECF0'}`,
           borderRadius: 16, padding: '4px 18px',
         }}>
-          <span style={{ fontSize: 22, fontWeight: 800, color: amountCents > 0 ? '#15151A' : '#9A9AA4' }}>R$</span>
+          <span style={{ fontSize: 22, fontWeight: 800, color: amountCents > 0 ? '#15151A' : '#6B6B76' }}>R$</span>
           <input
             inputMode="numeric"
             placeholder="0,00"
@@ -227,7 +227,7 @@ export default function DebtForm({ groupId }: DebtFormProps) {
       <div style={{ marginTop: 22 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
           <span style={LABEL}>QUEM DIVIDE</span>
-          <span style={{ fontSize: 11.5, color: '#9A9AA4' }}>
+          <span style={{ fontSize: 11.5, color: '#6B6B76' }}>
             {selectedCount} selecionado{selectedCount !== 1 ? 's' : ''}
           </span>
         </div>
@@ -293,7 +293,7 @@ export default function DebtForm({ groupId }: DebtFormProps) {
                       borderRadius: 10, padding: '5px 10px',
                     }}
                   >
-                    <span style={{ fontSize: 12, color: '#9A9AA4', fontWeight: 700 }}>R$</span>
+                    <span style={{ fontSize: 12, color: '#6B6B76', fontWeight: 700 }}>R$</span>
                     <input
                       inputMode="numeric"
                       placeholder="0,00"
@@ -342,7 +342,7 @@ export default function DebtForm({ groupId }: DebtFormProps) {
                     borderRadius: 11, fontWeight: 700, fontSize: 13.5,
                     cursor: 'pointer', border: 'none',
                     background: active ? '#fff' : 'transparent',
-                    color: active ? '#15151A' : '#9A9AA4',
+                    color: active ? '#15151A' : '#6B6B76',
                     boxShadow: active ? '0 1px 4px rgba(0,0,0,.1)' : 'none',
                   }}
                 >
@@ -411,7 +411,7 @@ export default function DebtForm({ groupId }: DebtFormProps) {
             background: canSubmit || !submitAttempted
               ? 'linear-gradient(135deg,#FF5436,#FF8A3D)'
               : '#ECECF0',
-            color: canSubmit || !submitAttempted ? '#fff' : '#9A9AA4',
+            color: canSubmit || !submitAttempted ? '#fff' : '#6B6B76',
             boxShadow: canSubmit || !submitAttempted ? '0 8px 18px rgba(255,84,54,.3)' : 'none',
           }}
         >

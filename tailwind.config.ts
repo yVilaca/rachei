@@ -20,7 +20,7 @@ const config: Config = {
         negative: '#FF5436',
         surface: '#F6F6F8',
         card: '#FFFFFF',
-        muted: '#9A9AA4',
+        muted: '#6B6B76',
         border: '#ECECF0',
       },
       fontFamily: {

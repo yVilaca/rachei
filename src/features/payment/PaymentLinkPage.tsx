@@ -119,7 +119,7 @@ export default function PaymentLinkPage() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 14, color: '#fff',
           }}>R</div>
-          <span style={{ fontSize: 12.5, fontWeight: 700, color: '#9A9AA4' }}>Rachei · Link seguro</span>
+          <span style={{ fontSize: 12.5, fontWeight: 700, color: '#6B6B76' }}>Rachei · Link seguro</span>
         </div>
         <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 20, color: '#15151A', letterSpacing: '-.01em' }}>
           {debt.description}
@@ -135,7 +135,7 @@ export default function PaymentLinkPage() {
           border: isPaid ? '1.5px solid #BEE9D2' : isAwaiting ? '1.5px solid #FCE6C0' : '1.5px solid #FFE0D2',
           marginBottom: 14,
         }}>
-          <div style={{ fontSize: 13, color: '#9A9AA4', fontWeight: 600, marginBottom: 6 }}>
+          <div style={{ fontSize: 13, color: '#6B6B76', fontWeight: 600, marginBottom: 6 }}>
             {isPaid ? 'Você pagou' : 'Sua parte'}
           </div>
           <div style={{
@@ -158,7 +158,7 @@ export default function PaymentLinkPage() {
               {getInitials(creditor?.debtor.name ?? debt.paidByUserId)}
             </div>
             <div>
-              <div style={{ fontSize: 11, color: '#9A9AA4', fontWeight: 600 }}>Cobrado por</div>
+              <div style={{ fontSize: 11, color: '#6B6B76', fontWeight: 600 }}>Cobrado por</div>
               <div style={{ fontSize: 14.5, fontWeight: 700, color: '#1A1A1F' }}>
                 {debt.installments.find((i) => i.debtorUserId !== debt.paidByUserId)?.debtor.name ?? debt.paidByUserId}
               </div>
@@ -195,7 +195,7 @@ export default function PaymentLinkPage() {
               marginBottom: i < arr.length - 1 ? 11 : 0,
               borderBottom: i < arr.length - 1 ? '1px solid #F0F0F4' : 'none',
             }}>
-              <span style={{ fontSize: 13.5, color: '#9A9AA4' }}>{label}</span>
+              <span style={{ fontSize: 13.5, color: '#6B6B76' }}>{label}</span>
               <span style={{
                 fontSize: 13.5, fontWeight: 700,
                 color: label === 'Status do link' ? '#E0431F' : '#1A1A1F',
@@ -225,7 +225,7 @@ export default function PaymentLinkPage() {
                   fontWeight: 800, fontSize: 16, border: 'none',
                   cursor: proofFile ? 'pointer' : 'not-allowed',
                   background: proofFile ? 'linear-gradient(135deg,#FF5436,#FF8A3D)' : '#EBEBEF',
-                  color: proofFile ? '#fff' : '#9A9AA4',
+                  color: proofFile ? '#fff' : '#6B6B76',
                   boxShadow: proofFile ? '0 8px 18px rgba(255,84,54,.3)' : 'none',
                   transition: 'background .2s, box-shadow .2s',
                 }}
@@ -234,7 +234,7 @@ export default function PaymentLinkPage() {
               </button>
             )}
 
-            <div style={{ textAlign: 'center', fontSize: 11.5, color: '#9A9AA4', lineHeight: 1.5 }}>
+            <div style={{ textAlign: 'center', fontSize: 11.5, color: '#6B6B76', lineHeight: 1.5 }}>
               Confirmação dupla: quem cobrou revisa o comprovante antes de quitar a dívida.
             </div>
           </div>

@@ -48,7 +48,7 @@ export default function GroupHeader({ group, groupBalance }: GroupHeaderProps) {
           <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 22, color: '#15151A', letterSpacing: '-0.01em' }}>
             {group.name}
           </div>
-          <div style={{ fontSize: 12.5, color: '#9A9AA4' }}>
+          <div style={{ fontSize: 12.5, color: '#6B6B76' }}>
             {group.members.length} membros
           </div>
         </div>
@@ -84,7 +84,7 @@ export default function GroupHeader({ group, groupBalance }: GroupHeaderProps) {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 12, color: '#9A9AA4', fontWeight: 600, whiteSpace: 'nowrap' }}>
+          <div style={{ fontSize: 12, color: '#6B6B76', fontWeight: 600, whiteSpace: 'nowrap' }}>
             Seu saldo neste grupo
           </div>
           <div style={{
@@ -94,7 +94,7 @@ export default function GroupHeader({ group, groupBalance }: GroupHeaderProps) {
             {formatCurrency(Math.abs(groupBalance))}
           </div>
         </div>
-        <div style={{ textAlign: 'right', fontSize: 11.5, color: '#9A9AA4', flexShrink: 0, marginLeft: 10 }}>
+        <div style={{ textAlign: 'right', fontSize: 11.5, color: '#6B6B76', flexShrink: 0, marginLeft: 10 }}>
           {balanceHint}
         </div>
       </div>

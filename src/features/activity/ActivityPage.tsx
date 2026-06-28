@@ -217,7 +217,7 @@ export default function ActivityPage() {
           </button>
         )}
       </div>
-      <div style={{ fontSize: 13, color: '#9A9AA4', marginBottom: 18 }}>
+      <div style={{ fontSize: 13, color: '#6B6B76', marginBottom: 18 }}>
         {unreadCount > 0
           ? `${unreadCount} não lida${unreadCount !== 1 ? 's' : ''}`
           : `${events.length} evento${events.length !== 1 ? 's' : ''} · tudo lido`}
@@ -237,7 +237,7 @@ export default function ActivityPage() {
                 padding: '9px 8px', borderRadius: 11, fontWeight: 700, fontSize: 13,
                 cursor: 'pointer', border: 'none',
                 background: active ? '#fff' : 'transparent',
-                color: active ? '#15151A' : '#9A9AA4',
+                color: active ? '#15151A' : '#6B6B76',
                 boxShadow: active ? '0 1px 4px rgba(0,0,0,.1)' : 'none',
               }}
             >
@@ -266,7 +266,7 @@ export default function ActivityPage() {
           <div style={{ fontWeight: 700, fontSize: 15, color: '#15151A' }}>
             {tab === 'action' ? 'Nenhuma ação necessária' : 'Nenhuma atividade ainda'}
           </div>
-          <div style={{ fontSize: 12.5, color: '#9A9AA4', marginTop: 4 }}>
+          <div style={{ fontSize: 12.5, color: '#6B6B76', marginTop: 4 }}>
             {tab === 'action' ? 'Você está em dia com tudo!' : 'Quando houver movimentações, aparecerão aqui.'}
           </div>
         </div>
@@ -274,7 +274,7 @@ export default function ActivityPage() {
         grouped.map(({ label, items }) => (
           <div key={label} style={{ marginBottom: 24 }}>
             <div style={{
-              fontSize: 11.5, fontWeight: 800, color: '#9A9AA4',
+              fontSize: 11.5, fontWeight: 800, color: '#6B6B76',
               letterSpacing: '.06em', textTransform: 'uppercase',
               marginBottom: 10,
             }}>
@@ -364,7 +364,7 @@ function EventCard({ event, isRead, onOpen, onMarkRead }: CardProps) {
           }}>
             {event.title}
           </div>
-          <div style={{ fontSize: 12, color: '#9A9AA4', marginTop: 3, lineHeight: 1.4 }}>
+          <div style={{ fontSize: 12, color: '#6B6B76', marginTop: 3, lineHeight: 1.4 }}>
             {event.sub}
           </div>
         </div>
@@ -380,7 +380,7 @@ function EventCard({ event, isRead, onOpen, onMarkRead }: CardProps) {
             <button
               onClick={(e) => { e.stopPropagation(); onMarkRead() }}
               style={{
-                fontSize: 11, fontWeight: 700, color: '#9A9AA4',
+                fontSize: 11, fontWeight: 700, color: '#6B6B76',
                 background: 'none', border: 'none', cursor: 'pointer', padding: 0,
                 whiteSpace: 'nowrap',
               }}

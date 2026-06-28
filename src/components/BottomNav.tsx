@@ -4,7 +4,7 @@ import { useAppStore } from '../stores/app.store'
 import { useAuthStore } from '../stores/auth.store'
 
 const CORAL = '#FF5436'
-const GRAY = '#9A9AA4'
+const GRAY = '#6B6B76'
 
 const EMOJI_BG: Record<string, string> = {
   '🏖️': '#FFF0ED',

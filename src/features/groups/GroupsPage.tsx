@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/auth.store'
 import { useAppStore } from '../../stores/app.store'
 import { formatCurrency } from '../../lib/utils'
+import { useToast } from '../../hooks/useToast'
+import Toast from '../../components/Toast'
 
 const EMOJI_BG: Record<string, string> = {
   '🏖️': '#FFF0ED',
@@ -16,6 +18,7 @@ export default function GroupsPage() {
   const navigate = useNavigate()
   const currentUser = useAuthStore((s) => s.currentUser)
   const { groups, debts } = useAppStore()
+  const { message: toastMsg, show: showToast } = useToast()
 
   const groupBalances = useMemo(() => {
     if (!currentUser) return {} as Record<string, number>
@@ -48,7 +51,7 @@ export default function GroupsPage() {
       <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 28, color: '#15151A', letterSpacing: '-0.02em', marginBottom: 4 }}>
         Grupos
       </div>
-      <div style={{ fontSize: 13.5, color: '#9A9AA4', marginBottom: 20 }}>
+      <div style={{ fontSize: 13.5, color: '#6B6B76', marginBottom: 20 }}>
         {groups.length} grupo{groups.length !== 1 ? 's' : ''} ativo{groups.length !== 1 ? 's' : ''}
       </div>
 
@@ -83,11 +86,11 @@ export default function GroupsPage() {
                 {/* Name + sub */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 16, color: '#1A1A1F' }}>{group.name}</div>
-                  <div style={{ fontSize: 12.5, color: '#9A9AA4', marginTop: 2 }}>{membersSub}</div>
+                  <div style={{ fontSize: 12.5, color: '#6B6B76', marginTop: 2 }}>{membersSub}</div>
                 </div>
                 {/* Balance */}
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontSize: 10.5, color: '#9A9AA4', fontWeight: 600 }}>seu saldo</div>
+                  <div style={{ fontSize: 10.5, color: '#6B6B76', fontWeight: 600 }}>seu saldo</div>
                   <div style={{ fontWeight: 800, fontSize: 15, color: balanceColor, whiteSpace: 'nowrap', marginTop: 2 }}>
                     {balanceText}
                   </div>
@@ -98,9 +101,11 @@ export default function GroupsPage() {
         })}
       </div>
 
+      <Toast message={toastMsg} />
+
       {/* Create group button */}
       <button
-        onClick={() => {}}
+        onClick={() => showToast('Criação de grupos em breve!')}
         style={{
           marginTop: 16, width: '100%',
           border: '2px dashed #D8D8DF', borderRadius: 20,

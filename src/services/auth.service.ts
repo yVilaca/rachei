@@ -1,26 +1,50 @@
+import api from '../lib/api'
 import { useAuthStore } from '../stores/auth.store'
 import type { User } from '../types'
 
+function mapUser(data: Record<string, unknown>): User {
+  return {
+    id: data.id as string,
+    name: data.name as string,
+    email: data.email as string,
+    phone: (data.phone as string) ?? undefined,
+    avatarUrl: (data.avatar_url as string) ?? undefined,
+    plan: data.plan as User['plan'],
+    createdAt: data.date_joined as string,
+  }
+}
+
 export const authService = {
-  login: (email: string, password: string): Promise<User> => {
-    // TODO: replace with fetch POST /api/auth/login → returns { user, token }
-    useAuthStore.getState().login(email, password)
-    const user = useAuthStore.getState().currentUser
-    if (!user) return Promise.reject(new Error('Login failed'))
-    return Promise.resolve(user)
+  async login(email: string, password: string): Promise<User> {
+    const { data } = await api.post('/api/auth/login/', { email, password })
+    const user = mapUser(data.user)
+    useAuthStore.getState().setTokens(data.access, data.refresh)
+    useAuthStore.getState().setUser(user)
+    return user
   },
 
-  register: (name: string, email: string, password: string): Promise<User> => {
-    // TODO: replace with fetch POST /api/auth/register → returns { user, token }
-    useAuthStore.getState().register(name, email, password)
-    const user = useAuthStore.getState().currentUser
-    if (!user) return Promise.reject(new Error('Registration failed'))
-    return Promise.resolve(user)
+  async register(name: string, email: string, password: string): Promise<User> {
+    const { data } = await api.post('/api/auth/register/', { name, email, password })
+    const user = mapUser(data.user)
+    useAuthStore.getState().setTokens(data.access, data.refresh)
+    useAuthStore.getState().setUser(user)
+    return user
   },
 
-  logout: (): Promise<void> => {
-    // TODO: replace with fetch POST /api/auth/logout (invalidate token server-side)
-    useAuthStore.getState().logout()
-    return Promise.resolve()
+  async logout(): Promise<void> {
+    const { refreshToken } = useAuthStore.getState()
+    if (refreshToken) {
+      try {
+        await api.post('/api/auth/logout/', { refresh: refreshToken })
+      } catch {
+        // best-effort — clear local state regardless
+      }
+    }
+    useAuthStore.getState().clearAuth()
+  },
+
+  async me(): Promise<User> {
+    const { data } = await api.get('/api/auth/me/')
+    return mapUser(data)
   },
 }

@@ -1,33 +1,47 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { createJSONStorage, persist } from 'zustand/middleware'
 import type { User } from '../types'
-import { MOCK_CURRENT_USER } from '../lib/mock-data'
 
 interface AuthStore {
+  accessToken: string | null
+  refreshToken: string | null
   currentUser: User | null
   isAuthenticated: boolean
-  login: (email: string, password: string) => void
-  register: (name: string, email: string, password: string) => void
-  logout: () => void
+  isInitializing: boolean
+  setTokens: (access: string, refresh: string) => void
+  setUser: (user: User) => void
+  clearAuth: () => void
+  setInitializing: (v: boolean) => void
 }
 
 export const useAuthStore = create<AuthStore>()(
   persist(
     (set) => ({
+      accessToken: null,
+      refreshToken: null,
       currentUser: null,
       isAuthenticated: false,
-      login: (_email: string, _password: string) => {
-        // Mock: any credentials authenticate as Sofia
-        set({ currentUser: MOCK_CURRENT_USER, isAuthenticated: true })
-      },
-      register: (name: string, email: string, _password: string) => {
+      isInitializing: true,
+      setTokens: (access, refresh) =>
+        set({ accessToken: access, refreshToken: refresh, isAuthenticated: true }),
+      setUser: (user) => set({ currentUser: user, isAuthenticated: true }),
+      clearAuth: () =>
         set({
-          currentUser: { ...MOCK_CURRENT_USER, name, email },
-          isAuthenticated: true,
-        })
-      },
-      logout: () => set({ currentUser: null, isAuthenticated: false }),
+          accessToken: null,
+          refreshToken: null,
+          currentUser: null,
+          isAuthenticated: false,
+        }),
+      setInitializing: (v) => set({ isInitializing: v }),
     }),
-    { name: 'rachei-auth' }
+    {
+      name: 'rachei-auth',
+      storage: createJSONStorage(() => localStorage),
+      // Only persist tokens and user — access token lives in memory only
+      partialize: (state) => ({
+        refreshToken: state.refreshToken,
+        currentUser: state.currentUser,
+      }),
+    }
   )
 )

@@ -45,12 +45,13 @@ function Toggle({ on, onToggle, label }: { on: boolean; onToggle: () => void; la
 
 export default function ProfilePage() {
   const navigate = useNavigate()
-  const { currentUser: user, logout } = useAuthStore()
+  const { currentUser: user } = useAuthStore()
   const [toggles, setToggles] = useState([true, true, false])
 
-  const handleLogout = () => {
-    logout()
-    navigate('/login')
+  const handleLogout = async () => {
+    const { authService } = await import('../../services/auth.service')
+    await authService.logout()
+    navigate('/login', { replace: true })
   }
 
   if (!user) return null

@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
+import { useAuthStore } from '../../stores/auth.store'
 import LoginForm from './components/LoginForm'
 import RegisterForm from './components/RegisterForm'
 
@@ -10,6 +11,9 @@ interface AuthPageProps {
 export default function AuthPage({ mode = 'login' }: AuthPageProps) {
   const [currentMode, setCurrentMode] = useState<'login' | 'register'>(mode)
   const navigate = useNavigate()
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />
 
   return (
     <div

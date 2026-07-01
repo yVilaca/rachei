@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
+import RootLayout from './RootLayout'
 import PrivateRoute from './PrivateRoute'
 import AppShell from './AppShell'
 import AuthPage from '../features/auth/AuthPage'
@@ -13,23 +14,28 @@ import ActivityPage from '../features/activity/ActivityPage'
 import NotFoundPage from '../features/shared/NotFoundPage'
 
 export const router = createBrowserRouter([
-  { path: '/', element: <Navigate to="/dashboard" replace /> },
-  { path: '/login', element: <AuthPage /> },
-  { path: '/cadastro', element: <AuthPage mode="register" /> },
-  // Pages with bottom nav
   {
-    element: <PrivateRoute><AppShell /></PrivateRoute>,
+    element: <RootLayout />,
     children: [
-      { path: '/dashboard', element: <DashboardPage /> },
-      { path: '/grupos', element: <GroupsPage /> },
-      { path: '/grupos/:id', element: <GroupPage /> },
-      { path: '/atividade', element: <ActivityPage /> },
-      { path: '/perfil', element: <ProfilePage /> },
+      { path: '/', element: <Navigate to="/dashboard" replace /> },
+      { path: '/login', element: <AuthPage /> },
+      { path: '/cadastro', element: <AuthPage mode="register" /> },
+      // Pages with bottom nav
+      {
+        element: <PrivateRoute><AppShell /></PrivateRoute>,
+        children: [
+          { path: '/dashboard', element: <DashboardPage /> },
+          { path: '/grupos', element: <GroupsPage /> },
+          { path: '/grupos/:id', element: <GroupPage /> },
+          { path: '/atividade', element: <ActivityPage /> },
+          { path: '/perfil', element: <ProfilePage /> },
+        ],
+      },
+      // Pages without bottom nav
+      { path: '/grupos/:id/nova-divida', element: <PrivateRoute><NewDebtPage /></PrivateRoute> },
+      { path: '/dividas/:id', element: <PrivateRoute><DebtDetailPage /></PrivateRoute> },
+      { path: '/pagar/:token', element: <PaymentLinkPage /> },
+      { path: '*', element: <NotFoundPage /> },
     ],
   },
-  // Pages without bottom nav
-  { path: '/grupos/:id/nova-divida', element: <PrivateRoute><NewDebtPage /></PrivateRoute> },
-  { path: '/dividas/:id', element: <PrivateRoute><DebtDetailPage /></PrivateRoute> },
-  { path: '/pagar/:token', element: <PaymentLinkPage /> },
-  { path: '*', element: <NotFoundPage /> },
 ])

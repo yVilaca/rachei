@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAuthStore } from '../../../stores/auth.store'
+import { authService } from '../../../services/auth.service'
 import { Input } from '../../../components/ui/input'
 import { Label } from '../../../components/ui/label'
 import { Button } from '../../../components/ui/button'
@@ -11,13 +11,20 @@ interface QuickRegisterFormProps {
 export default function QuickRegisterForm({ onComplete }: QuickRegisterFormProps) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const register = useAuthStore((s) => s.register)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name || !email) return
-    register(name, email, 'mock-password')
-    onComplete()
+    setIsLoading(true)
+    try {
+      await authService.register(name, email, crypto.randomUUID())
+      onComplete()
+    } catch {
+      // silently fail — payment link flow, user can retry
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (

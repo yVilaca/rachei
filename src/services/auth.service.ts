@@ -47,4 +47,12 @@ export const authService = {
     const { data } = await api.get('/api/auth/me/')
     return mapUser(data)
   },
+
+  async forgotPassword(email: string): Promise<void> {
+    await api.post('/api/auth/password/forgot/', { email })
+  },
+
+  async resetPassword(email: string, code: string, password: string): Promise<void> {
+    await api.post('/api/auth/password/reset/', { email, code, password })
+  },
 }

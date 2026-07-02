@@ -3,6 +3,7 @@ import RootLayout from './RootLayout'
 import PrivateRoute from './PrivateRoute'
 import AppShell from './AppShell'
 import AuthPage from '../features/auth/AuthPage'
+import ForgotPasswordPage from '../features/auth/ForgotPasswordPage'
 import DashboardPage from '../features/dashboard/DashboardPage'
 import GroupPage from '../features/groups/GroupPage'
 import GroupsPage from '../features/groups/GroupsPage'
@@ -20,6 +21,7 @@ export const router = createBrowserRouter([
       { path: '/', element: <Navigate to="/dashboard" replace /> },
       { path: '/login', element: <AuthPage /> },
       { path: '/cadastro', element: <AuthPage mode="register" /> },
+      { path: '/esqueci-senha', element: <ForgotPasswordPage /> },
       // Pages with bottom nav
       {
         element: <PrivateRoute><AppShell /></PrivateRoute>,

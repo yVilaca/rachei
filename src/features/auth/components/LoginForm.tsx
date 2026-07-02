@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { authService } from '../../../services/auth.service'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
@@ -62,6 +62,11 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
           className="rounded-2xl border-border bg-[#FAFAFC] px-4 py-3.5 text-sm"
           disabled={isLoading}
         />
+      </div>
+      <div className="flex justify-end">
+        <Link to="/esqueci-senha" className="text-xs font-semibold text-brand">
+          Esqueci minha senha
+        </Link>
       </div>
       {error && <p className="text-sm text-negative">{error}</p>}
       <Button

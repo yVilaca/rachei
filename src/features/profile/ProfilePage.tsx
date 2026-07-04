@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/auth.store'
 import { getInitials } from '../../lib/utils'
+import TwoFactorSection from './components/TwoFactorSection'
 
 const PRO_FEATURES = [
   'Grupos ilimitados',
@@ -133,6 +134,14 @@ export default function ProfilePage() {
           <div style={{ fontSize: 13, opacity: 0.85, marginTop: 6 }}>Grupos ilimitados, WhatsApp e mais.</div>
         </div>
       )}
+
+      {/* Security section */}
+      <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 700, fontSize: 15, color: '#15151A', margin: '24px 2px 12px' }}>
+        Segurança
+      </div>
+      <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 2px 10px rgba(0,0,0,.04)', padding: '16px 16px' }}>
+        <TwoFactorSection />
+      </div>
 
       {/* Notifications section */}
       <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 700, fontSize: 15, color: '#15151A', margin: '24px 2px 12px' }}>

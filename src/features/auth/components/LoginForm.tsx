@@ -26,8 +26,12 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
     setError('')
     setIsLoading(true)
     try {
-      await authService.login(email, password)
+      const result = await authService.login(email, password)
       const redirect = searchParams.get('redirect') ?? '/dashboard'
+      if ('requires2FA' in result) {
+        navigate(`/verificar-2fa?redirect=${encodeURIComponent(redirect)}`)
+        return
+      }
       navigate(redirect, { replace: true })
     } catch (err: unknown) {
       const res = (err as { response?: { data?: { detail?: string } } })?.response?.data

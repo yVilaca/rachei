@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import QRCode from 'qrcode'
 import { twoFactorService } from '../../../services/twoFactor.service'
+import type { TrustedDevice } from '../../../services/twoFactor.service'
 
 type Step = 'idle' | 'qr' | 'confirm' | 'backup'
 type DisableStep = 'idle' | 'confirming'
@@ -106,6 +107,11 @@ export default function TwoFactorSection() {
   const [regenError, setRegenError] = useState('')
   const [isLoadingRegen, setIsLoadingRegen] = useState(false)
 
+  // Trusted devices
+  const [devices, setDevices] = useState<TrustedDevice[]>([])
+  const [loadingDevices, setLoadingDevices] = useState(false)
+  const [revokingId, setRevokingId] = useState<number | null>(null)
+
   const hasFetched = useRef(false)
 
   useEffect(() => {
@@ -113,6 +119,30 @@ export default function TwoFactorSection() {
     hasFetched.current = true
     twoFactorService.getStatus().then((r) => setIsActive(r.is_active)).catch(() => setIsActive(false))
   }, [])
+
+  useEffect(() => {
+    if (isActive) {
+      setLoadingDevices(true)
+      twoFactorService.getTrustedDevices()
+        .then(setDevices)
+        .catch(() => setDevices([]))
+        .finally(() => setLoadingDevices(false))
+    } else {
+      setDevices([])
+    }
+  }, [isActive])
+
+  const handleRevokeDevice = async (id: number) => {
+    setRevokingId(id)
+    try {
+      await twoFactorService.deleteTrustedDevice(id)
+      setDevices((prev) => prev.filter((d) => d.id !== id))
+    } catch {
+      // falha silenciosa — o item permanece na lista
+    } finally {
+      setRevokingId(null)
+    }
+  }
 
   // ---- Setup ----
 
@@ -445,6 +475,63 @@ export default function TwoFactorSection() {
             </button>
           </div>
         </form>
+      )}
+
+      {/* Dispositivos confiáveis */}
+      {(loadingDevices || devices.length > 0) && (
+        <div>
+          <div style={{
+            fontSize: 11, fontWeight: 800, color: '#6B6B76', letterSpacing: '0.06em',
+            marginBottom: 8,
+          }}>
+            DISPOSITIVOS CONFIÁVEIS
+          </div>
+          {loadingDevices ? (
+            <p style={{ fontSize: 12.5, color: '#6B6B76' }}>Carregando…</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {devices.map((d) => (
+                <div
+                  key={d.id}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '10px 12px', borderRadius: 12,
+                    background: '#F5F5F8', border: '1px solid #E4E4EE',
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      fontSize: 13, fontWeight: 700, color: '#1A1A1F',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {d.user_agent || 'Dispositivo desconhecido'}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#6B6B76', marginTop: 1 }}>
+                      Adicionado {new Date(d.created_at).toLocaleDateString('pt-BR')}
+                      {d.last_used_at && (
+                        <> · Usado {new Date(d.last_used_at).toLocaleDateString('pt-BR')}</>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRevokeDevice(d.id)}
+                    disabled={revokingId === d.id}
+                    style={{
+                      padding: '5px 11px', borderRadius: 8,
+                      border: '1px solid #FFCFCF', background: '#FFF5F5',
+                      color: '#E0431F', fontSize: 12, fontWeight: 700,
+                      cursor: revokingId === d.id ? 'default' : 'pointer',
+                      flexShrink: 0, opacity: revokingId === d.id ? 0.5 : 1,
+                    }}
+                  >
+                    {revokingId === d.id ? '…' : 'Revogar'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </div>
   )

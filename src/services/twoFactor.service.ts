@@ -3,6 +3,14 @@ import { useAuthStore } from '../stores/auth.store'
 import { TRUSTED_DEVICE_KEY, mapUser } from './auth.service'
 import type { User } from '../types'
 
+export interface TrustedDevice {
+  id: number
+  user_agent: string
+  created_at: string
+  last_used_at: string | null
+  expires_at: string
+}
+
 export const twoFactorService = {
   async getStatus(): Promise<{ is_active: boolean }> {
     const { data } = await api.get('/api/auth/2fa/status/')
@@ -43,5 +51,14 @@ export const twoFactorService = {
   async regenerateBackupCodes(code: string): Promise<{ backup_codes: string[] }> {
     const { data } = await api.post('/api/auth/2fa/backup-codes/regenerate/', { code })
     return data
+  },
+
+  async getTrustedDevices(): Promise<TrustedDevice[]> {
+    const { data } = await api.get('/api/auth/2fa/trusted-devices/')
+    return data
+  },
+
+  async deleteTrustedDevice(id: number): Promise<void> {
+    await api.delete(`/api/auth/2fa/trusted-devices/${id}/`)
   },
 }

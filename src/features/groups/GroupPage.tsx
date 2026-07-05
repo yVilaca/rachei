@@ -25,7 +25,6 @@ export default function GroupPage() {
   const [addPhone, setAddPhone] = useState('')
   const [addName, setAddName] = useState('')
   const [addRole, setAddRole] = useState<'admin' | 'member'>('member')
-  const [needsName, setNeedsName] = useState(false)
   const [adding, setAdding] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
 
@@ -67,7 +66,6 @@ export default function GroupPage() {
     setAddPhone('')
     setAddName('')
     setAddRole('member')
-    setNeedsName(false)
     setAddError(null)
     setShowAddModal(true)
   }
@@ -89,7 +87,6 @@ export default function GroupPage() {
     } catch (err: unknown) {
       const data = (err as { response?: { data?: Record<string, unknown> } })?.response?.data
       if (data?.name) {
-        setNeedsName(true)
         setAddError('Nome obrigatório para contatos ainda não cadastrados.')
       } else if (data?.phone) {
         const msg = Array.isArray(data.phone) ? String(data.phone[0]) : String(data.phone)
@@ -188,35 +185,31 @@ export default function GroupPage() {
             <div style={{ fontSize: 12, fontWeight: 700, color: '#6B6B76', marginBottom: 8 }}>TELEFONE (E.164)</div>
             <input
               value={addPhone}
-              onChange={(e) => { setAddPhone(e.target.value); setAddError(null); setNeedsName(false) }}
+              onChange={(e) => { setAddPhone(e.target.value); setAddError(null) }}
               placeholder="+5511999999999"
               maxLength={16}
               style={{
                 width: '100%', padding: '14px 16px', borderRadius: 14,
-                border: addError && !needsName ? '2px solid #FF5436' : '2px solid #E8E8EF',
+                border: addError ? '2px solid #FF5436' : '2px solid #E8E8EF',
                 fontSize: 15, color: '#1A1A1F', outline: 'none',
                 fontFamily: '"Plus Jakarta Sans", sans-serif',
                 boxSizing: 'border-box', marginBottom: 14,
               }}
             />
 
-            {needsName && (
-              <>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#6B6B76', marginBottom: 8 }}>NOME DO CONTATO</div>
-                <input
-                  value={addName}
-                  onChange={(e) => { setAddName(e.target.value); setAddError(null) }}
-                  placeholder="Nome completo"
-                  maxLength={150}
-                  style={{
-                    width: '100%', padding: '14px 16px', borderRadius: 14,
-                    border: '2px solid #E8E8EF', fontSize: 15, color: '#1A1A1F', outline: 'none',
-                    fontFamily: '"Plus Jakarta Sans", sans-serif',
-                    boxSizing: 'border-box', marginBottom: 14,
-                  }}
-                />
-              </>
-            )}
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#6B6B76', marginBottom: 8 }}>NOME DO CONTATO</div>
+            <input
+              value={addName}
+              onChange={(e) => { setAddName(e.target.value); setAddError(null) }}
+              placeholder="Nome completo (obrigatório se não cadastrado)"
+              maxLength={150}
+              style={{
+                width: '100%', padding: '14px 16px', borderRadius: 14,
+                border: '2px solid #E8E8EF', fontSize: 15, color: '#1A1A1F', outline: 'none',
+                fontFamily: '"Plus Jakarta Sans", sans-serif',
+                boxSizing: 'border-box', marginBottom: 14,
+              }}
+            />
 
             <div style={{ fontSize: 12, fontWeight: 700, color: '#6B6B76', marginBottom: 8 }}>PAPEL</div>
             <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>

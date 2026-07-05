@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/auth.store'
 import { useAppStore } from '../../stores/app.store'
@@ -6,7 +6,8 @@ import { formatCurrency, getInitials } from '../../lib/utils'
 import { avatarFor } from '../../lib/avatar'
 import { useToast } from '../../hooks/useToast'
 import Toast from '../../components/Toast'
-import type { FriendBalance } from '../../types'
+import { groupService } from '../../services/group.service'
+import type { FriendBalance, GroupSummary, User } from '../../types'
 
 const EMOJI_BG: Record<string, string> = {
   '🏖️': '#FFF0ED', '🏠': '#EDF4FF', '🍕': '#FFF8EC', '🎮': '#F0EDFF', '✈️': '#EDF4FF',
@@ -15,9 +16,25 @@ const EMOJI_BG: Record<string, string> = {
 export default function DashboardPage() {
   const navigate = useNavigate()
   const currentUser = useAuthStore((s) => s.currentUser)
-  const { groups, debts, generateChargeLink } = useAppStore()
+  const { debts, generateChargeLink } = useAppStore()
   const [debtTab, setDebtTab] = useState<0 | 1>(0)
   const { message: toastMsg, show: showToast } = useToast()
+
+  const [groups, setGroups] = useState<GroupSummary[]>([])
+  useEffect(() => {
+    groupService.getGroups().then(setGroups).catch(() => {})
+  }, [])
+
+  // Mapa de devedores a partir das parcelas — única fonte de User obj disponível sem API de debts
+  const debtorUserMap = useMemo(() => {
+    const map = new Map<string, User>()
+    for (const debt of debts) {
+      for (const inst of debt.installments) {
+        map.set(inst.debtorUserId, inst.debtor)
+      }
+    }
+    return map
+  }, [debts])
 
   const { totalOwed, totalOwing, friendBalances, myOwed, myCredit } = useMemo(() => {
     if (!currentUser) return {
@@ -27,15 +44,12 @@ export default function DashboardPage() {
       myCredit: [] as CreditItem[],
     }
 
-    const allMembers = groups.flatMap((g) => g.members)
     const balanceMap = new Map<string, number>()
-
     const myOwed: OwedItem[] = []
     const myCredit: CreditItem[] = []
 
     for (const debt of debts) {
-      const grp = groups.find((g) => g.id === debt.groupId)
-      const creditor = allMembers.find((m) => m.userId === debt.paidByUserId)?.user
+      const grpName = groups.find((g) => g.id === debt.groupId)?.name ?? ''
 
       for (const inst of debt.installments) {
         if (inst.status === 'paid') continue
@@ -46,7 +60,7 @@ export default function DashboardPage() {
             installmentId: inst.id,
             debtId: debt.id,
             description: debt.description,
-            groupName: grp?.name ?? '',
+            groupName: grpName,
             amountCents: inst.amountCents,
             status: inst.status,
             debtorName: inst.debtor.name,
@@ -60,10 +74,10 @@ export default function DashboardPage() {
             installmentId: inst.id,
             debtId: debt.id,
             description: debt.description,
-            groupName: grp?.name ?? '',
+            groupName: grpName,
             amountCents: inst.amountCents,
             status: inst.status,
-            creditorName: creditor?.name ?? '—',
+            creditorName: debtorUserMap.get(debt.paidByUserId)?.name ?? '—',
             creditorId: debt.paidByUserId,
           })
         }
@@ -75,7 +89,7 @@ export default function DashboardPage() {
     const friendBalances: FriendBalance[] = []
 
     for (const [userId, balance] of balanceMap.entries()) {
-      const user = allMembers.find((m) => m.userId === userId)?.user
+      const user = debtorUserMap.get(userId)
       if (!user) continue
       if (balance > 0) totalOwed += balance
       else totalOwing += Math.abs(balance)
@@ -88,7 +102,7 @@ export default function DashboardPage() {
       myOwed: myOwed.sort((a, b) => b.amountCents - a.amountCents),
       myCredit: myCredit.sort((a, b) => b.amountCents - a.amountCents),
     }
-  }, [currentUser, debts, groups])
+  }, [currentUser, debts, groups, debtorUserMap])
 
   if (!currentUser) return null
 
@@ -159,7 +173,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Minhas dívidas ── */}
+      {/* Minhas dívidas */}
       {totalItems > 0 && (
         <div style={{ padding: '24px 20px 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -171,12 +185,9 @@ export default function DashboardPage() {
             </span>
           </div>
 
-          {/* Segmented control */}
           <div style={{ display: 'flex', background: '#EBEBEF', borderRadius: 14, padding: 4, marginBottom: 12 }}>
-            {([
-              ['Me devem', myCredit.length],
-              ['Preciso pagar', myOwed.length],
-            ] as const).map(([label, count], idx) => {
+            {(['Me devem', 'Preciso pagar'] as const).map((label, idx) => {
+              const count = idx === 0 ? myCredit.length : myOwed.length
               const active = debtTab === idx
               return (
                 <button key={label} type="button"
@@ -205,16 +216,13 @@ export default function DashboardPage() {
             })}
           </div>
 
-          {/* Cards */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {activeList.length === 0 ? (
               <div style={{
                 background: '#fff', borderRadius: 18, padding: '20px 16px',
                 textAlign: 'center', boxShadow: '0 2px 10px rgba(0,0,0,.04)',
               }}>
-                <div style={{ fontSize: 28, marginBottom: 6 }}>
-                  {debtTab === 0 ? '💸' : '🎉'}
-                </div>
+                <div style={{ fontSize: 28, marginBottom: 6 }}>{debtTab === 0 ? '💸' : '🎉'}</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#15151A' }}>
                   {debtTab === 0 ? 'Nenhuma cobrança pendente' : 'Você não deve nada!'}
                 </div>
@@ -236,7 +244,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ── Por amigo ── */}
+      {/* Por amigo */}
       {friendBalances.length > 0 && (
         <div style={{ padding: '24px 20px 0' }}>
           <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 700, fontSize: 16, color: '#15151A', marginBottom: 12 }}>
@@ -276,7 +284,7 @@ export default function DashboardPage() {
 
       <Toast message={toastMsg} />
 
-      {/* ── Seus grupos ── */}
+      {/* Seus grupos */}
       <div style={{ padding: '24px 20px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <span style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 700, fontSize: 16, color: '#15151A' }}>
@@ -290,9 +298,13 @@ export default function DashboardPage() {
           </button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {groups.length === 0 && (
+            <div style={{ textAlign: 'center', color: '#6B6B76', fontSize: 13, padding: '12px 0' }}>
+              Nenhum grupo ainda.
+            </div>
+          )}
           {groups.map((group) => {
             const iconBg = group.emoji ? (EMOJI_BG[group.emoji] ?? '#FFF0ED') : '#F0F0F4'
-            const memberSub = `${group.members.length} membros`
             return (
               <button key={group.id} onClick={() => navigate(`/grupos/${group.id}`)}
                 style={{
@@ -311,7 +323,9 @@ export default function DashboardPage() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 15, color: '#1A1A1F' }}>{group.name}</div>
-                  <div style={{ fontSize: 12, color: '#6B6B76', marginTop: 2 }}>{memberSub}</div>
+                  <div style={{ fontSize: 12, color: '#6B6B76', marginTop: 2 }}>
+                    {group.memberCount} membro{group.memberCount !== 1 ? 's' : ''}
+                  </div>
                 </div>
               </button>
             )
@@ -346,7 +360,7 @@ interface CreditItem {
   debtorId: string
 }
 
-// ── OwedCard — "Preciso pagar" ─────────────────────────────────────────────────
+// ── OwedCard ──────────────────────────────────────────────────────────────────
 
 function OwedCard({ item, onOpen }: { item: OwedItem; onOpen: () => void }) {
   const av = avatarFor(item.creditorId)
@@ -400,7 +414,7 @@ function OwedCard({ item, onOpen }: { item: OwedItem; onOpen: () => void }) {
   )
 }
 
-// ── CreditCard — "Me devem" ────────────────────────────────────────────────────
+// ── CreditCard ────────────────────────────────────────────────────────────────
 
 function CreditCard({ item, onCharge, onOpen }: { item: CreditItem; onCharge: () => void; onOpen: () => void }) {
   const av = avatarFor(item.debtorId)

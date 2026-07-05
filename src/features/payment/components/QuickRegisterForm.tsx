@@ -53,9 +53,10 @@ export default function QuickRegisterForm({ onComplete }: QuickRegisterFormProps
         </div>
         <Button
           type="submit"
+          disabled={isLoading}
           className="w-full rounded-xl bg-gradient-to-r from-brand to-brand-light font-bold text-white shadow-float"
         >
-          Criar conta e confirmar
+          {isLoading ? 'Criando conta…' : 'Criar conta e confirmar'}
         </Button>
       </form>
     </div>

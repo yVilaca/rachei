@@ -52,7 +52,7 @@ export default function ForgotPasswordPage() {
       await authService.resetPassword(email, code, password)
       setStep('done')
     } catch (err: unknown) {
-      const data = (err as { response?: { data?: Record<string, string[]> } })?.response?.data
+      const data = (err as { response?: { data?: { code?: string[]; password?: string[]; detail?: string } } })?.response?.data
       const msg = data?.code?.[0] ?? data?.password?.[0] ?? data?.detail ?? 'Erro ao redefinir senha'
       setError(msg)
     } finally {

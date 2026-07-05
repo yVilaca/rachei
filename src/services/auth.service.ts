@@ -6,11 +6,11 @@ export const TRUSTED_DEVICE_KEY = 'rachei-td-token'
 
 export function mapUser(data: Record<string, unknown>): User {
   return {
-    id: data.id as string,
+    id: String(data.id),           // backend retorna integer, normalizar para string
     name: data.name as string,
     email: data.email as string,
-    phone: (data.phone as string) ?? undefined,
-    avatarUrl: (data.avatar_url as string) ?? undefined,
+    phone: (data.phone as string) || undefined,
+    avatarUrl: (data.avatar_url as string) || undefined,  // "" vira undefined
     plan: data.plan as User['plan'],
     createdAt: data.date_joined as string,
   }

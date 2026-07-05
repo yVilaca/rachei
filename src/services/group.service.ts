@@ -4,9 +4,9 @@ import type { GroupSummary, GroupDetail, GroupMember, UserMin, ContatoPendente }
 // ── Tipos brutos da API (snake_case) ─────────────────────────────────────────
 
 interface ApiUserMin {
-  id: string
+  id: number   // User model usa BigAutoField, não UUID
   name: string
-  avatar_url?: string
+  avatar_url?: string | null
 }
 
 interface ApiContatoPendente {
@@ -57,7 +57,11 @@ interface PaginatedResponse<T> {
 // ── Transformadores ───────────────────────────────────────────────────────────
 
 function toUserMin(raw: ApiUserMin): UserMin {
-  return { id: raw.id, name: raw.name, avatarUrl: raw.avatar_url }
+  return {
+    id: String(raw.id),
+    name: raw.name,
+    avatarUrl: raw.avatar_url || undefined,  // "" vira undefined
+  }
 }
 
 function toContatoPendente(raw: ApiContatoPendente): ContatoPendente {

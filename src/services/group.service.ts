@@ -129,9 +129,9 @@ export const groupService = {
     return toGroupDetail(data)
   },
 
-  async createGroup(name: string, emoji?: string): Promise<GroupDetail> {
-    const { data } = await api.post<ApiGroupDetail>('/api/grupos/', { name, emoji })
-    return toGroupDetail(data)
+  async createGroup(name: string, emoji?: string): Promise<GroupSummary> {
+    const { data } = await api.post<ApiGroupSummary>('/api/grupos/', { name, emoji })
+    return toGroupSummary(data)
   },
 
   async addMember(groupId: string, input: AddMemberInput): Promise<GroupMember> {

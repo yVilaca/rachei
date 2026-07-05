@@ -88,17 +88,7 @@ export default function GroupsPage() {
     setCreateError(null)
     try {
       const created = await groupService.createGroup(name, newGroupEmoji !== '👥' ? newGroupEmoji : undefined)
-      setGroups((prev) => [
-        {
-          id: created.id,
-          name: created.name,
-          emoji: created.emoji,
-          archived: created.archived,
-          createdAt: created.createdAt,
-          memberCount: created.members.length,
-        },
-        ...prev,
-      ])
+      setGroups((prev) => [created, ...prev])
       setShowCreateModal(false)
       setNewGroupName('')
       setNewGroupEmoji('👥')

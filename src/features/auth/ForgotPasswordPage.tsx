@@ -7,6 +7,16 @@ import { Label } from '../../components/ui/label'
 
 type Step = 'request' | 'reset' | 'done'
 
+const INPUT_CLS = [
+  'h-12 rounded-2xl border border-[#E4E4EC]',
+  'bg-white px-4 text-sm text-[#15151A]',
+  'placeholder:text-[#ABABBE] shadow-[0_2px_8px_rgba(0,0,0,0.06)]',
+  'focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/20',
+  'transition-shadow',
+].join(' ')
+
+const LABEL_CLS = 'text-xs font-semibold uppercase tracking-widest text-muted'
+
 export default function ForgotPasswordPage() {
   const navigate = useNavigate()
   const [step, setStep] = useState<Step>('request')
@@ -25,7 +35,6 @@ export default function ForgotPasswordPage() {
       await authService.forgotPassword(email)
       setStep('reset')
     } catch {
-      // Neutral — always advance to the code step so we don't reveal if email exists
       setStep('reset')
     } finally {
       setIsLoading(false)
@@ -51,153 +60,167 @@ export default function ForgotPasswordPage() {
     }
   }
 
+  const stepTitle: Record<Step, string> = {
+    request: 'Esqueceu a senha?',
+    reset: 'Digite o código',
+    done: 'Senha redefinida!',
+  }
+  const stepSubtitle: Record<Step, string> = {
+    request: 'Informe seu e-mail e enviaremos um código de 6 dígitos.',
+    reset: 'Verifique seu e-mail e insira o código abaixo. Ele expira em 20 minutos.',
+    done: 'Você foi desconectado de todos os dispositivos. Faça login com a nova senha.',
+  }
+
   return (
     <div
-      className="flex min-h-dvh flex-col"
-      style={{ background: 'linear-gradient(170deg,#FFF1EC 0%,#F5F5F8 46%)' }}
+      className="flex min-h-dvh flex-col px-6 pb-12"
+      style={{ background: 'linear-gradient(170deg,#FFF1EC 0%,#F5F5F8 60%)' }}
     >
       {/* Back button */}
-      <button
-        type="button"
-        onClick={() => step === 'reset' ? setStep('request') : navigate('/login')}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          background: 'none', border: 'none', cursor: 'pointer',
-          color: '#6B6B76', fontSize: 14, fontWeight: 600,
-          padding: '20px 24px 0',
-        }}
-      >
-        ← {step === 'reset' ? 'Reenviar código' : 'Voltar ao login'}
-      </button>
+      <div className="pt-5">
+        <button
+          type="button"
+          onClick={() => (step === 'reset' ? setStep('request') : navigate('/login'))}
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: '50%',
+            background: '#fff',
+            border: '1.5px solid #ECECF0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            color: '#15151A',
+            fontSize: 18,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+          }}
+        >
+          ←
+        </button>
+      </div>
 
       {/* Hero */}
-      <div className="flex flex-col items-center px-8 pt-8 text-center">
+      <div className="flex flex-col items-center pt-10 text-center">
         <div
           style={{
-            width: 64, height: 64, borderRadius: 20,
-            background: 'linear-gradient(135deg,#FF5436,#FF9A3D)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 28, color: '#fff',
+            width: 80,
+            height: 80,
+            borderRadius: '50%',
+            background: step === 'done'
+              ? 'linear-gradient(135deg, #11A36B, #1DC980)'
+              : 'linear-gradient(135deg, #FF5436, #FF9A3D)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 30,
+            boxShadow: step === 'done'
+              ? '0 16px 40px rgba(17,163,107,0.35)'
+              : '0 16px 40px rgba(255,84,54,0.35)',
           }}
         >
           {step === 'done' ? '✓' : '🔑'}
         </div>
-        <h1 className="mt-5 font-heading text-3xl font-extrabold tracking-tight text-[#15151A]">
-          {step === 'request' && 'Esqueci minha senha'}
-          {step === 'reset' && 'Digite o código'}
-          {step === 'done' && 'Senha redefinida!'}
+
+        <h1 className="mt-6 font-heading text-[2rem] font-extrabold leading-tight tracking-tight text-[#15151A]">
+          {stepTitle[step]}
         </h1>
         <p className="mt-2 max-w-[280px] text-sm leading-relaxed text-muted">
-          {step === 'request' && 'Informe seu e-mail e enviaremos um código de 6 dígitos.'}
-          {step === 'reset' && `Verifique seu e-mail e insira o código abaixo. Ele expira em 20 minutos.`}
-          {step === 'done' && 'Você foi desconectado de todos os dispositivos. Faça login com a nova senha.'}
+          {stepSubtitle[step]}
         </p>
       </div>
 
-      {/* Card */}
-      <div className="mt-auto px-6 pb-10">
-        <div className="rounded-3xl bg-white p-6 shadow-[0_10px_30px_rgba(0,0,0,0.06)]">
-          {step === 'request' && (
-            <form onSubmit={handleRequest} className="flex flex-col gap-3">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="fp-email" className="text-sm font-semibold text-[#15151A]">
-                  E-mail
-                </Label>
-                <Input
-                  id="fp-email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="rounded-2xl border-border bg-[#FAFAFC] px-4 py-3.5 text-sm"
-                  disabled={isLoading}
-                  autoFocus
-                />
-              </div>
-              {error && <p className="text-sm text-negative">{error}</p>}
-              <Button
-                type="submit"
+      {/* Form */}
+      <div className="mt-10">
+        {step === 'request' && (
+          <form onSubmit={handleRequest} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="fp-email" className={LABEL_CLS}>E-mail</Label>
+              <Input
+                id="fp-email"
+                type="email"
+                placeholder="seu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={INPUT_CLS}
                 disabled={isLoading}
-                className="mt-2 w-full rounded-2xl bg-gradient-to-r from-brand to-brand-light py-4 font-extrabold text-white shadow-float"
-              >
-                {isLoading ? 'Enviando…' : 'Enviar código'}
-              </Button>
-            </form>
-          )}
-
-          {step === 'reset' && (
-            <form onSubmit={handleReset} className="flex flex-col gap-3">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="fp-code" className="text-sm font-semibold text-[#15151A]">
-                  Código de 6 dígitos
-                </Label>
-                <Input
-                  id="fp-code"
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="000000"
-                  maxLength={6}
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                  className="rounded-2xl border-border bg-[#FAFAFC] px-4 py-3.5 text-center text-xl font-bold tracking-[0.5em]"
-                  disabled={isLoading}
-                  autoFocus
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="fp-password" className="text-sm font-semibold text-[#15151A]">
-                  Nova senha
-                </Label>
-                <Input
-                  id="fp-password"
-                  type="password"
-                  placeholder="Mínimo 8 caracteres"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="rounded-2xl border-border bg-[#FAFAFC] px-4 py-3.5 text-sm"
-                  disabled={isLoading}
-                />
-              </div>
-              {error && <p className="text-sm text-negative">{error}</p>}
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="mt-2 w-full rounded-2xl bg-gradient-to-r from-brand to-brand-light py-4 font-extrabold text-white shadow-float"
-              >
-                {isLoading ? 'Redefinindo…' : 'Redefinir senha'}
-              </Button>
-              <button
-                type="button"
-                onClick={handleRequest}
-                disabled={isLoading}
-                className="text-center text-sm text-muted"
-              >
-                Não recebeu?{' '}
-                <span className="font-bold text-brand">Reenviar código</span>
-              </button>
-            </form>
-          )}
-
-          {step === 'done' && (
-            <div className="flex flex-col gap-3">
-              <div
-                style={{
-                  background: '#E9F9F0', borderRadius: 14, padding: '14px 16px',
-                  color: '#1A7A4A', fontSize: 14, fontWeight: 600, textAlign: 'center',
-                }}
-              >
-                Senha alterada com sucesso ✓
-              </div>
-              <Button
-                type="button"
-                onClick={() => navigate('/login', { replace: true })}
-                className="w-full rounded-2xl bg-gradient-to-r from-brand to-brand-light py-4 font-extrabold text-white shadow-float"
-              >
-                Ir para o login
-              </Button>
+                autoFocus
+              />
             </div>
-          )}
-        </div>
+            {error && <p className="rounded-xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-500">{error}</p>}
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="mt-1 h-12 w-full rounded-2xl bg-gradient-to-r from-brand to-brand-light font-extrabold text-white shadow-float"
+            >
+              {isLoading ? 'Enviando…' : 'Enviar código'}
+            </Button>
+          </form>
+        )}
+
+        {step === 'reset' && (
+          <form onSubmit={handleReset} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="fp-code" className={LABEL_CLS}>Código de 6 dígitos</Label>
+              <Input
+                id="fp-code"
+                type="text"
+                inputMode="numeric"
+                placeholder="000000"
+                maxLength={6}
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                className={`${INPUT_CLS} text-center text-xl font-bold tracking-[0.5em]`}
+                disabled={isLoading}
+                autoFocus
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="fp-password" className={LABEL_CLS}>Nova senha</Label>
+              <Input
+                id="fp-password"
+                type="password"
+                placeholder="Mínimo 8 caracteres"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={INPUT_CLS}
+                disabled={isLoading}
+              />
+            </div>
+            {error && <p className="rounded-xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-500">{error}</p>}
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="mt-1 h-12 w-full rounded-2xl bg-gradient-to-r from-brand to-brand-light font-extrabold text-white shadow-float"
+            >
+              {isLoading ? 'Redefinindo…' : 'Redefinir senha'}
+            </Button>
+            <button
+              type="button"
+              onClick={handleRequest}
+              disabled={isLoading}
+              className="text-center text-sm text-muted"
+            >
+              Não recebeu?{' '}
+              <span className="font-bold text-brand">Reenviar código</span>
+            </button>
+          </form>
+        )}
+
+        {step === 'done' && (
+          <div className="flex flex-col gap-4">
+            <div className="rounded-2xl bg-[#E9F9F0] px-4 py-3.5 text-center text-sm font-semibold text-[#1A7A4A]">
+              Senha alterada com sucesso ✓
+            </div>
+            <Button
+              type="button"
+              onClick={() => navigate('/login', { replace: true })}
+              className="h-12 w-full rounded-2xl bg-gradient-to-r from-brand to-brand-light font-extrabold text-white shadow-float"
+            >
+              Ir para o login
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   )

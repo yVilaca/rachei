@@ -4,12 +4,11 @@ import type { User } from '../types'
 
 interface AuthStore {
   accessToken: string | null
-  refreshToken: string | null
   currentUser: User | null
   pendingToken: string | null
   isAuthenticated: boolean
   isInitializing: boolean
-  setTokens: (access: string, refresh: string) => void
+  setAccessToken: (access: string) => void
   setUser: (user: User) => void
   clearAuth: () => void
   setInitializing: (v: boolean) => void
@@ -20,18 +19,16 @@ export const useAuthStore = create<AuthStore>()(
   persist(
     (set) => ({
       accessToken: null,
-      refreshToken: null,
       currentUser: null,
       pendingToken: null,
       isAuthenticated: false,
       isInitializing: true,
-      setTokens: (access, refresh) =>
-        set({ accessToken: access, refreshToken: refresh, isAuthenticated: true }),
+      setAccessToken: (access) =>
+        set({ accessToken: access, isAuthenticated: true }),
       setUser: (user) => set({ currentUser: user, isAuthenticated: true }),
       clearAuth: () =>
         set({
           accessToken: null,
-          refreshToken: null,
           currentUser: null,
           pendingToken: null,
           isAuthenticated: false,
@@ -42,11 +39,8 @@ export const useAuthStore = create<AuthStore>()(
     {
       name: 'rachei-auth',
       storage: createJSONStorage(() => localStorage),
-      // Only persist tokens and user — access token lives in memory only
-      partialize: (state) => ({
-        refreshToken: state.refreshToken,
-        currentUser: state.currentUser,
-      }),
+      // Refresh token não persiste — vive apenas no cookie HttpOnly
+      partialize: (state) => ({ currentUser: state.currentUser }),
     }
   )
 )

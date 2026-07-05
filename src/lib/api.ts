@@ -7,6 +7,7 @@ const api = axios.create({
   baseURL: BASE_URL,
   timeout: 10_000,
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,  // envia cookie HttpOnly do refresh token em toda requisição
 })
 
 // Deduplicates concurrent 401s — only one refresh request fires at a time
@@ -45,14 +46,14 @@ api.interceptors.response.use(
 )
 
 async function doRefresh(): Promise<string> {
-  const { refreshToken, setTokens } = useAuthStore.getState()
-  if (!refreshToken) throw new Error('no-refresh-token')
-
-  // Plain axios (no interceptors) to avoid infinite retry loops
-  const { data } = await axios.post(`${BASE_URL}/api/auth/refresh/`, {
-    refresh: refreshToken,
-  })
-  setTokens(data.access, data.refresh ?? refreshToken)
+  // Cookie HttpOnly é enviado automaticamente (withCredentials=true)
+  // Sem body — o refresh token vem do cookie, não do store
+  const { data } = await axios.post(
+    `${BASE_URL}/api/auth/refresh/`,
+    {},
+    { withCredentials: true },
+  )
+  useAuthStore.getState().setAccessToken(data.access)
   return data.access
 }
 

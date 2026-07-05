@@ -17,40 +17,57 @@ export default function AuthPage({ mode = 'login' }: AuthPageProps) {
 
   return (
     <div
-      className="flex min-h-dvh flex-col"
-      style={{ background: 'linear-gradient(170deg,#FFF1EC 0%,#F5F5F8 46%)' }}
+      className="flex min-h-dvh flex-col px-6 pb-12"
+      style={{ background: 'linear-gradient(170deg,#FFF1EC 0%,#F5F5F8 60%)' }}
     >
-      {/* Logo hero */}
-      <div className="flex flex-col items-center px-8 pt-16 text-center">
+      {/* Hero: logo orb + titles */}
+      <div className="flex flex-col items-center pt-20 text-center">
         <div
-          className="flex h-20 w-20 items-center justify-center rounded-3xl text-4xl font-extrabold text-white shadow-hero"
-          style={{ background: 'linear-gradient(135deg,#FF5436,#FF9A3D)', fontFamily: '"Bricolage Grotesque"' }}
+          style={{
+            width: 88,
+            height: 88,
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #FF5436, #FF9A3D)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 34,
+            fontWeight: 900,
+            color: '#fff',
+            boxShadow: '0 16px 40px rgba(255,84,54,0.35)',
+            fontFamily: '"Bricolage Grotesque", sans-serif',
+          }}
         >
           R
         </div>
-        <h1 className="mt-6 font-heading text-4xl font-extrabold tracking-tight text-[#15151A]">
-          Rachei
+
+        <h1 className="mt-6 font-heading text-[2rem] font-extrabold leading-tight tracking-tight text-[#15151A]">
+          {currentMode === 'login' ? 'Bem-vindo de volta!' : 'Criar sua conta'}
         </h1>
         <p className="mt-2 max-w-[260px] text-sm leading-relaxed text-muted">
-          Dívidas entre amigos, simples e sem climão.
+          {currentMode === 'login'
+            ? 'Entre para gerenciar seus racheis.'
+            : 'Dívidas entre amigos, simples e sem climão.'}
         </p>
       </div>
 
-      {/* Form card */}
-      <div className="mt-auto px-6 pb-10">
-        <div className="rounded-3xl bg-white p-6 shadow-[0_10px_30px_rgba(0,0,0,0.06)]">
-          {currentMode === 'login' ? (
-            <LoginForm onSwitchToRegister={() => {
+      {/* Form — flui logo abaixo do hero */}
+      <div className="mt-10">
+        {currentMode === 'login' ? (
+          <LoginForm
+            onSwitchToRegister={() => {
               setCurrentMode('register')
               navigate('/cadastro', { replace: true })
-            }} />
-          ) : (
-            <RegisterForm onSwitchToLogin={() => {
+            }}
+          />
+        ) : (
+          <RegisterForm
+            onSwitchToLogin={() => {
               setCurrentMode('login')
               navigate('/login', { replace: true })
-            }} />
-          )}
-        </div>
+            }}
+          />
+        )}
       </div>
     </div>
   )

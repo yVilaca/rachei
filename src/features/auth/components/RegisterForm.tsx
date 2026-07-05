@@ -5,6 +5,14 @@ import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
 import { Label } from '../../../components/ui/label'
 
+const INPUT_CLS = [
+  'h-12 rounded-2xl border border-[#E4E4EC]',
+  'bg-white px-4 text-sm text-[#15151A]',
+  'placeholder:text-[#ABABBE] shadow-[0_2px_8px_rgba(0,0,0,0.06)]',
+  'focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/20',
+  'transition-shadow',
+].join(' ')
+
 interface RegisterFormProps {
   onSwitchToLogin: () => void
 }
@@ -42,50 +50,61 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="name" className="text-sm font-semibold text-[#15151A]">Nome</Label>
+        <Label htmlFor="name" className="text-xs font-semibold uppercase tracking-widest text-muted">
+          Nome completo
+        </Label>
         <Input
           id="name"
           placeholder="Seu nome completo"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="rounded-2xl border-border bg-[#FAFAFC] px-4 py-3.5 text-sm"
+          className={INPUT_CLS}
           disabled={isLoading}
         />
       </div>
+
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="reg-email" className="text-sm font-semibold text-[#15151A]">E-mail</Label>
+        <Label htmlFor="reg-email" className="text-xs font-semibold uppercase tracking-widest text-muted">
+          E-mail
+        </Label>
         <Input
           id="reg-email"
           type="email"
           placeholder="seu@email.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="rounded-2xl border-border bg-[#FAFAFC] px-4 py-3.5 text-sm"
+          className={INPUT_CLS}
           disabled={isLoading}
         />
       </div>
+
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="reg-password" className="text-sm font-semibold text-[#15151A]">Senha</Label>
+        <Label htmlFor="reg-password" className="text-xs font-semibold uppercase tracking-widest text-muted">
+          Senha
+        </Label>
         <Input
           id="reg-password"
           type="password"
           placeholder="Mínimo 8 caracteres"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="rounded-2xl border-border bg-[#FAFAFC] px-4 py-3.5 text-sm"
+          className={INPUT_CLS}
           disabled={isLoading}
         />
       </div>
-      {error && <p className="text-sm text-negative">{error}</p>}
+
+      {error && <p className="rounded-xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-500">{error}</p>}
+
       <Button
         type="submit"
         disabled={isLoading}
-        className="mt-2 w-full rounded-2xl bg-gradient-to-r from-brand to-brand-light py-4 font-extrabold text-white shadow-float"
+        className="mt-1 h-12 w-full rounded-2xl bg-gradient-to-r from-brand to-brand-light font-extrabold text-white shadow-float"
       >
         {isLoading ? 'Criando conta…' : 'Criar conta'}
       </Button>
+
       <p className="text-center text-sm text-muted">
         Já tem conta?{' '}
         <button type="button" onClick={onSwitchToLogin} className="font-bold text-brand">

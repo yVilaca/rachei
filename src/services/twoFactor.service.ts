@@ -37,7 +37,8 @@ export const twoFactorService = {
       localStorage.setItem(TRUSTED_DEVICE_KEY, data.trusted_device_token)
     }
     const user = mapUser(data.user)
-    useAuthStore.getState().setTokens(data.access, data.refresh)
+    // Refresh token chega via cookie HttpOnly — não persiste no store
+    useAuthStore.getState().setAccessToken(data.access)
     useAuthStore.getState().setUser(user)
     useAuthStore.getState().setPendingToken(null)
     return user

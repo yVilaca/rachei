@@ -25,7 +25,8 @@ export const authService = {
       return { requires2FA: true }
     }
     const user = mapUser(data.user)
-    useAuthStore.getState().setTokens(data.access, data.refresh)
+    // Refresh token chega via cookie HttpOnly — não persiste no store
+    useAuthStore.getState().setAccessToken(data.access)
     useAuthStore.getState().setUser(user)
     return user
   },
@@ -33,19 +34,17 @@ export const authService = {
   async register(name: string, email: string, password: string): Promise<User> {
     const { data } = await api.post('/api/auth/register/', { name, email, password })
     const user = mapUser(data.user)
-    useAuthStore.getState().setTokens(data.access, data.refresh)
+    useAuthStore.getState().setAccessToken(data.access)
     useAuthStore.getState().setUser(user)
     return user
   },
 
   async logout(): Promise<void> {
-    const { refreshToken } = useAuthStore.getState()
-    if (refreshToken) {
-      try {
-        await api.post('/api/auth/logout/', { refresh: refreshToken })
-      } catch {
-        // best-effort — clear local state regardless
-      }
+    try {
+      // Cookie é enviado automaticamente; backend blacklista e limpa o cookie
+      await api.post('/api/auth/logout/', {})
+    } catch {
+      // best-effort — limpa estado local independente
     }
     useAuthStore.getState().clearAuth()
   },

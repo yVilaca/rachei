@@ -1,11 +1,17 @@
 import { useNavigate } from 'react-router-dom'
 import { getInitials, formatCurrency } from '../../../lib/utils'
 import { avatarFor } from '../../../lib/avatar'
-import type { Group } from '../../../types'
+import type { GroupDetail } from '../../../types'
 
 interface GroupHeaderProps {
-  group: Group
+  group: GroupDetail
   groupBalance: number
+}
+
+const STATUS_BADGE: Record<string, { label: string; bg: string; fg: string } | undefined> = {
+  pendente_confirmacao: { label: 'Aguardando', bg: '#FFF8EC', fg: '#B07A00' },
+  pendente_registro:   { label: 'Não cadastrado', bg: '#F0F0F4', fg: '#6B6B76' },
+  inativo:             { label: 'Inativo', bg: '#F0F0F4', fg: '#9A9A9A' },
 }
 
 export default function GroupHeader({ group, groupBalance }: GroupHeaderProps) {
@@ -49,28 +55,46 @@ export default function GroupHeader({ group, groupBalance }: GroupHeaderProps) {
             {group.name}
           </div>
           <div style={{ fontSize: 12.5, color: '#6B6B76' }}>
-            {group.members.length} membros
+            {group.members.length} membro{group.members.length !== 1 ? 's' : ''}
           </div>
         </div>
       </div>
 
       {/* Overlapping member avatars */}
-      <div style={{ display: 'flex', alignItems: 'center', marginTop: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', marginTop: 14, flexWrap: 'wrap', gap: 4 }}>
         {group.members.map((m) => {
-          const c = avatarFor(m.userId)
+          const displayName = m.user?.name ?? m.contatoPendente?.name ?? '?'
+          const avatarId = m.user?.id ?? String(m.id)
+          const c = avatarFor(avatarId)
+          const badge = STATUS_BADGE[m.status]
+          const isActive = m.status === 'ativo'
+
           return (
-            <div
-              key={m.userId}
-              style={{
-                width: 34, height: 34, borderRadius: '50%',
-                background: c.bg, color: c.fg,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 800, fontSize: 11,
-                border: '2.5px solid #F5F5F8',
-                marginRight: -8,
-              }}
-            >
-              {getInitials(m.user.name)}
+            <div key={m.id} style={{ position: 'relative', marginRight: -8 }}>
+              <div
+                title={displayName}
+                style={{
+                  width: 34, height: 34, borderRadius: '50%',
+                  background: c.bg, color: c.fg,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 800, fontSize: 11,
+                  border: `2.5px solid ${isActive ? '#F5F5F8' : '#E0E0E8'}`,
+                  opacity: isActive ? 1 : 0.6,
+                }}
+              >
+                {getInitials(displayName)}
+              </div>
+              {badge && (
+                <div style={{
+                  position: 'absolute', bottom: -4, right: -2,
+                  background: badge.bg, borderRadius: 4,
+                  fontSize: 8, fontWeight: 800, color: badge.fg,
+                  padding: '1px 3px', whiteSpace: 'nowrap',
+                  border: '1px solid #fff',
+                }}>
+                  {badge.label}
+                </div>
+              )}
             </div>
           )
         })}
@@ -78,7 +102,7 @@ export default function GroupHeader({ group, groupBalance }: GroupHeaderProps) {
 
       {/* Group balance card */}
       <div style={{
-        marginTop: 16, background: '#fff', borderRadius: 18,
+        marginTop: 20, background: '#fff', borderRadius: 18,
         padding: '15px 17px',
         boxShadow: '0 2px 10px rgba(0,0,0,.04)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',

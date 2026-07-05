@@ -1,11 +1,10 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Group, Debt, Installment, InstallmentStatus, NewDebtInput } from '../types'
-import { MOCK_GROUPS, MOCK_DEBTS, MOCK_USERS } from '../lib/mock-data'
+import type { Debt, Installment, InstallmentStatus, NewDebtInput } from '../types'
+import { MOCK_DEBTS, MOCK_USERS } from '../lib/mock-data'
 import { generateToken } from '../lib/utils'
 
 interface AppStore {
-  groups: Group[]
   debts: Debt[]
   readEventIds: Set<string>
   addDebt: (input: NewDebtInput) => void
@@ -20,7 +19,6 @@ interface AppStore {
 export const useAppStore = create<AppStore>()(
   persist(
     (set, get) => ({
-  groups: MOCK_GROUPS,
   debts: MOCK_DEBTS,
   readEventIds: new Set<string>(),
 

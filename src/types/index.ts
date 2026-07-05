@@ -1,5 +1,6 @@
 export type UserPlan = 'free' | 'pro'
 export type MemberRole = 'admin' | 'member'
+export type MemberStatus = 'ativo' | 'inativo' | 'pendente_confirmacao' | 'pendente_registro'
 export type SplitType = 'equal' | 'custom'
 export type InstallmentStatus = 'pending' | 'awaiting_confirmation' | 'paid'
 
@@ -13,23 +14,51 @@ export interface User {
   createdAt: string
 }
 
-export interface Group {
+/** Campos mínimos retornados pelo UserListSerializer do backend. */
+export interface UserMin {
   id: string
   name: string
-  emoji?: string
-  createdBy: string
-  members: GroupMember[]
-  createdAt: string
-  archived: boolean
+  avatarUrl?: string
+}
+
+export interface ContatoPendente {
+  id: number
+  name: string
+  phone: string
 }
 
 export interface GroupMember {
-  userId: string
-  groupId: string
+  id: number
+  user: UserMin | null
+  contatoPendente: ContatoPendente | null
   role: MemberRole
+  status: MemberStatus
   joinedAt: string
-  user: User
 }
+
+/** Retornado pelo endpoint de listagem (sem array de membros). */
+export interface GroupSummary {
+  id: string
+  name: string
+  emoji?: string
+  archived: boolean
+  createdAt: string
+  memberCount: number
+}
+
+/** Retornado pelo endpoint de detalhe (com membros e criador). */
+export interface GroupDetail {
+  id: string
+  name: string
+  emoji?: string
+  archived: boolean
+  createdAt: string
+  createdBy: UserMin
+  members: GroupMember[]
+}
+
+/** Alias para compatibilidade com componentes que recebem o grupo completo. */
+export type Group = GroupDetail
 
 export interface Debt {
   id: string

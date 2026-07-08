@@ -21,9 +21,7 @@ export interface UserMin {
 }
 
 export interface ContatoPendente {
-  id: number
   name: string
-  phone: string
 }
 
 export interface GroupMember {

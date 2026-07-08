@@ -9,9 +9,7 @@ interface ApiUserMin {
 }
 
 interface ApiContatoPendente {
-  id: number
   name: string
-  phone: string
 }
 
 interface ApiGroupMember {
@@ -56,7 +54,7 @@ function toUserMin(raw: ApiUserMin): UserMin {
 }
 
 function toContatoPendente(raw: ApiContatoPendente): ContatoPendente {
-  return { id: raw.id, name: raw.name, phone: raw.phone }
+  return { name: raw.name }
 }
 
 function toGroupMember(raw: ApiGroupMember): GroupMember {

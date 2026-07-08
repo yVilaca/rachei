@@ -1,11 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../../stores/auth.store'
 import { useAppStore } from '../../../stores/app.store'
 import { getInitials } from '../../../lib/utils'
 import { useToast } from '../../../hooks/useToast'
 import Toast from '../../../components/Toast'
-import type { SplitType } from '../../../types'
+import { groupService } from '../../../services/group.service'
+import type { GroupDetail, SplitType } from '../../../types'
 
 interface DebtFormProps {
   groupId: string
@@ -21,21 +22,37 @@ const fmt = (cents: number) =>
 export default function DebtForm({ groupId }: DebtFormProps) {
   const navigate = useNavigate()
   const currentUser = useAuthStore((s) => s.currentUser)
-  const { groups, addDebt } = useAppStore()
+  const { addDebt } = useAppStore()
 
-  const group = groups.find((g) => g.id === groupId)!
+  const [group, setGroup] = useState<GroupDetail | null>(null)
+  const [loadError, setLoadError] = useState(false)
+
+  useEffect(() => {
+    groupService.getGroup(groupId)
+      .then(setGroup)
+      .catch(() => setLoadError(true))
+  }, [groupId])
+
+  // Somente membros ativos com usuário real participam de dívidas
+  const activeMembers = (group?.members ?? []).filter(
+    (m) => m.status === 'ativo' && m.user !== null,
+  )
 
   // ── state ────────────────────────────────────────────────────────────────
   const [amountCents, setAmountCents] = useState(0)
   const [description, setDescription] = useState('')
   const [paidByUserId, setPaidByUserId] = useState(currentUser?.id ?? '')
-  const [selectedDebtors, setSelectedDebtors] = useState<string[]>(
-    group.members.map((m) => m.userId),
-  )
+  const [selectedDebtors, setSelectedDebtors] = useState<string[]>([])
   const [splitType, setSplitType] = useState<SplitType>('equal')
   const [customCents, setCustomCents] = useState<Record<string, number>>({})
 
-  // touched flags for inline errors
+  // Inicializa selectedDebtors quando o grupo carregar
+  useEffect(() => {
+    if (activeMembers.length > 0 && selectedDebtors.length === 0) {
+      setSelectedDebtors(activeMembers.map((m) => m.user!.id))
+    }
+  }, [activeMembers.length]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const [touchedDesc, setTouchedDesc] = useState(false)
   const [touchedAmount, setTouchedAmount] = useState(false)
   const [submitAttempted, setSubmitAttempted] = useState(false)
@@ -44,19 +61,14 @@ export default function DebtForm({ groupId }: DebtFormProps) {
   // ── derived ──────────────────────────────────────────────────────────────
   const selectedCount = selectedDebtors.length
   const equalShareCents = selectedCount > 0 ? Math.floor(amountCents / selectedCount) : 0
-  // Distribute rounding remainder to first debtor
   const equalRemainder = amountCents - equalShareCents * selectedCount
 
   const customSumCents = selectedDebtors.reduce((acc, id) => acc + (customCents[id] ?? 0), 0)
-  const diffCents = amountCents - customSumCents // positive = under, negative = over
+  const diffCents = amountCents - customSumCents
 
-  const splitOk = splitType === 'equal'
-    ? selectedCount > 0
-    : Math.abs(diffCents) < 1 // within 1 cent
-
+  const splitOk = splitType === 'equal' ? selectedCount > 0 : Math.abs(diffCents) < 1
   const hasExternalDebtor = selectedDebtors.some((id) => id !== paidByUserId)
 
-  // Per-debtor custom validation
   const zeroCentDebtors = splitType === 'custom'
     ? selectedDebtors.filter((id) => (customCents[id] ?? 0) === 0)
     : []
@@ -85,7 +97,7 @@ export default function DebtForm({ groupId }: DebtFormProps) {
   const handleAmountInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTouchedAmount(true)
     const digits = e.target.value.replace(/\D/g, '').replace(/^0+/, '') || '0'
-    setAmountCents(Math.min(parseInt(digits, 10), 99999999)) // cap at R$999.999,99
+    setAmountCents(Math.min(parseInt(digits, 10), 99999999))
   }
 
   const toggleDebtor = (userId: string) => {
@@ -103,10 +115,7 @@ export default function DebtForm({ groupId }: DebtFormProps) {
     setSubmitAttempted(true)
     setTouchedDesc(true)
     setTouchedAmount(true)
-    if (!canSubmit) {
-      showToast(formError!)
-      return
-    }
+    if (!canSubmit) { showToast(formError!); return }
 
     const debtors = selectedDebtors.map((userId, idx) => ({
       userId,
@@ -119,7 +128,23 @@ export default function DebtForm({ groupId }: DebtFormProps) {
     navigate(`/grupos/${groupId}`)
   }
 
-  // ── render ────────────────────────────────────────────────────────────────
+  // ── loading / error ───────────────────────────────────────────────────────
+  if (loadError) {
+    return (
+      <div style={{ padding: 24, textAlign: 'center', color: '#6B6B76', fontSize: 14 }}>
+        Grupo não encontrado.
+      </div>
+    )
+  }
+
+  if (!group) {
+    return (
+      <div style={{ padding: 24 }}>
+        <div style={{ height: 60, background: '#F0F0F4', borderRadius: 16, opacity: 0.5 }} />
+      </div>
+    )
+  }
+
   const showDescError = touchedDesc && !!descError
   const showAmountError = touchedAmount && !!amountError
 
@@ -194,10 +219,12 @@ export default function DebtForm({ groupId }: DebtFormProps) {
       <div style={{ marginTop: 22 }}>
         <div style={LABEL}>QUEM PAGOU (CREDOR)</div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
-          {group.members.map((m) => {
-            const active = paidByUserId === m.userId
+          {activeMembers.map((m) => {
+            const userId = m.user!.id
+            const name = m.user!.name
+            const active = paidByUserId === userId
             return (
-              <button key={m.userId} type="button" onClick={() => setPaidByUserId(m.userId)}
+              <button key={userId} type="button" onClick={() => setPaidByUserId(userId)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 7,
                   padding: '8px 13px 8px 8px', borderRadius: 999,
@@ -214,16 +241,16 @@ export default function DebtForm({ groupId }: DebtFormProps) {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontWeight: 800, fontSize: 10,
                 }}>
-                  {getInitials(m.user.name)}
+                  {getInitials(name)}
                 </div>
-                {m.user.name.split(' ')[0]}
+                {name.split(' ')[0]}
               </button>
             )
           })}
         </div>
       </div>
 
-      {/* QUEM DEVE */}
+      {/* QUEM DIVIDE */}
       <div style={{ marginTop: 22 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
           <span style={LABEL}>QUEM DIVIDE</span>
@@ -233,18 +260,18 @@ export default function DebtForm({ groupId }: DebtFormProps) {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {group.members.map((m) => {
-            const isSelected = selectedDebtors.includes(m.userId)
-            const isPayer = m.userId === paidByUserId
+          {activeMembers.map((m) => {
+            const userId = m.user!.id
+            const name = m.user!.name
+            const isSelected = selectedDebtors.includes(userId)
+            const isPayer = userId === paidByUserId
             const myShareCents = isSelected
-              ? splitType === 'equal'
-                ? equalShareCents
-                : (customCents[m.userId] ?? 0)
+              ? splitType === 'equal' ? equalShareCents : (customCents[userId] ?? 0)
               : 0
-            const hasZeroCustom = isSelected && splitType === 'custom' && (customCents[m.userId] ?? 0) === 0
+            const hasZeroCustom = isSelected && splitType === 'custom' && (customCents[userId] ?? 0) === 0
 
             return (
-              <button key={m.userId} type="button" onClick={() => toggleDebtor(m.userId)}
+              <button key={userId} type="button" onClick={() => toggleDebtor(userId)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12,
                   padding: '11px 14px', borderRadius: 15, cursor: 'pointer',
@@ -253,7 +280,6 @@ export default function DebtForm({ groupId }: DebtFormProps) {
                   textAlign: 'left',
                 }}
               >
-                {/* Avatar */}
                 <div style={{
                   width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
                   background: isSelected ? '#FFD6CC' : '#F0F0F4',
@@ -261,13 +287,12 @@ export default function DebtForm({ groupId }: DebtFormProps) {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontWeight: 800, fontSize: 12,
                 }}>
-                  {getInitials(m.user.name)}
+                  {getInitials(name)}
                 </div>
 
-                {/* Name + badge */}
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
                   <span style={{ fontWeight: 700, fontSize: 14.5, color: '#1A1A1F' }}>
-                    {m.user.name.split(' ')[0]}
+                    {name.split(' ')[0]}
                   </span>
                   {isPayer && (
                     <span style={{
@@ -277,7 +302,6 @@ export default function DebtForm({ groupId }: DebtFormProps) {
                   )}
                 </div>
 
-                {/* Share amount or custom input */}
                 {isSelected && splitType === 'equal' && amountCents > 0 && (
                   <span style={{ fontWeight: 800, fontSize: 14, color: '#11A36B', flexShrink: 0 }}>
                     R$ {fmt(myShareCents)}
@@ -297,8 +321,8 @@ export default function DebtForm({ groupId }: DebtFormProps) {
                     <input
                       inputMode="numeric"
                       placeholder="0,00"
-                      value={(customCents[m.userId] ?? 0) > 0 ? fmt(customCents[m.userId] ?? 0) : ''}
-                      onChange={(e) => handleCustomCents(m.userId, e.target.value)}
+                      value={(customCents[userId] ?? 0) > 0 ? fmt(customCents[userId] ?? 0) : ''}
+                      onChange={(e) => handleCustomCents(userId, e.target.value)}
                       style={{
                         width: 68, border: 'none', background: 'transparent',
                         fontWeight: 800, fontSize: 14, color: '#15151A',
@@ -309,7 +333,6 @@ export default function DebtForm({ groupId }: DebtFormProps) {
                   </div>
                 )}
 
-                {/* Checkbox */}
                 <div style={{
                   width: 24, height: 24, borderRadius: 8, flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -352,7 +375,6 @@ export default function DebtForm({ groupId }: DebtFormProps) {
             })}
           </div>
 
-          {/* Equal split summary */}
           {splitType === 'equal' && amountCents > 0 && selectedCount > 0 && (
             <div style={{
               marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -367,7 +389,6 @@ export default function DebtForm({ groupId }: DebtFormProps) {
             </div>
           )}
 
-          {/* Custom split live feedback */}
           {splitType === 'custom' && amountCents > 0 && (
             <div style={{
               marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -376,16 +397,10 @@ export default function DebtForm({ groupId }: DebtFormProps) {
               borderRadius: 12, padding: '11px 14px',
             }}>
               <span style={{ fontSize: 13, fontWeight: 700, color: splitOk ? '#0E8F5C' : diffCents < 0 ? '#E0431F' : '#B07D00' }}>
-                {splitOk
-                  ? 'Total correto ✓'
-                  : diffCents > 0
-                  ? `Faltam distribuir`
-                  : `Excede o total`}
+                {splitOk ? 'Total correto ✓' : diffCents > 0 ? 'Faltam distribuir' : 'Excede o total'}
               </span>
               <span style={{ fontSize: 13, fontWeight: 800, color: splitOk ? '#0E8F5C' : diffCents < 0 ? '#E0431F' : '#B07D00' }}>
-                {splitOk
-                  ? `R$ ${fmt(amountCents)}`
-                  : `R$ ${fmt(Math.abs(diffCents))}`}
+                {splitOk ? `R$ ${fmt(amountCents)}` : `R$ ${fmt(Math.abs(diffCents))}`}
               </span>
             </div>
           )}

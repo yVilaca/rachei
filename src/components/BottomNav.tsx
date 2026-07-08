@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAppStore } from '../stores/app.store'
 import { useAuthStore } from '../stores/auth.store'
+import { groupService } from '../services/group.service'
+import type { GroupSummary } from '../types'
 
 const CORAL = '#FF5436'
 const GRAY = '#6B6B76'
@@ -14,9 +16,11 @@ const EMOJI_BG: Record<string, string> = {
 export default function BottomNav() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const { groups, debts, readEventIds } = useAppStore()
+  const { debts, readEventIds } = useAppStore()
   const currentUser = useAuthStore((s) => s.currentUser)
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [groups, setGroups] = useState<GroupSummary[]>([])
+  const [loadingGroups, setLoadingGroups] = useState(false)
 
   // Dot: any actionable event not yet read
   const hasUnread = currentUser != null && debts.some((debt) => {
@@ -38,11 +42,20 @@ export default function BottomNav() {
   const groupIdMatch = pathname.match(/^\/grupos\/([^/]+)$/)
   const currentGroupId = groupIdMatch?.[1]
 
-  const onFab = () => {
+  const onFab = async () => {
     if (currentGroupId) {
       navigate(`/grupos/${currentGroupId}/nova-divida`)
-    } else {
-      setSheetOpen(true)
+      return
+    }
+    setSheetOpen(true)
+    if (groups.length === 0 && !loadingGroups) {
+      setLoadingGroups(true)
+      try {
+        const gs = await groupService.getGroups()
+        setGroups(gs)
+      } finally {
+        setLoadingGroups(false)
+      }
     }
   }
 
@@ -104,7 +117,7 @@ export default function BottomNav() {
                   </div>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 15, color: '#1A1A1F' }}>{group.name}</div>
-                    <div style={{ fontSize: 12, color: '#9A9AA4', marginTop: 2 }}>{group.members.length} membros</div>
+                    <div style={{ fontSize: 12, color: '#9A9AA4', marginTop: 2 }}>{group.memberCount} membro{group.memberCount !== 1 ? 's' : ''}</div>
                   </div>
                   <svg style={{ marginLeft: 'auto' }} width="8" height="14" viewBox="0 0 8 14" fill="none">
                     <path d="M1 1l6 6-6 6" stroke="#C0C0C8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

@@ -31,12 +31,20 @@ export const authService = {
     return user
   },
 
-  async register(name: string, email: string, password: string): Promise<User> {
-    const { data } = await api.post('/api/auth/register/', { name, email, password })
+  async register(name: string, email: string, phone: string, password: string): Promise<User> {
+    const { data } = await api.post('/api/auth/register/', { name, email, phone, password })
     const user = mapUser(data.user)
     useAuthStore.getState().setAccessToken(data.access)
     useAuthStore.getState().setUser(user)
     return user
+  },
+
+  async verifyPhone(code: string): Promise<void> {
+    await api.post('/api/auth/phone/verify/', { code })
+  },
+
+  async resendPhoneSms(): Promise<void> {
+    await api.post('/api/auth/phone/resend/', {})
   },
 
   async logout(): Promise<void> {

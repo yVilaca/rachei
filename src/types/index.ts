@@ -18,7 +18,6 @@ export interface User {
 export interface UserMin {
   id: string
   name: string
-  avatarUrl?: string
 }
 
 export interface ContatoPendente {
@@ -33,7 +32,6 @@ export interface GroupMember {
   contatoPendente: ContatoPendente | null
   role: MemberRole
   status: MemberStatus
-  joinedAt: string
 }
 
 /** Retornado pelo endpoint de listagem (sem array de membros). */
@@ -42,18 +40,15 @@ export interface GroupSummary {
   name: string
   emoji?: string
   archived: boolean
-  createdAt: string
   memberCount: number
 }
 
-/** Retornado pelo endpoint de detalhe (com membros e criador). */
+/** Retornado pelo endpoint de detalhe (com membros). */
 export interface GroupDetail {
   id: string
   name: string
   emoji?: string
   archived: boolean
-  createdAt: string
-  createdBy: UserMin
   members: GroupMember[]
 }
 

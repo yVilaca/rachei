@@ -20,6 +20,7 @@ interface RegisterFormProps {
 export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -27,8 +28,12 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name || !email || !password) {
+    if (!name || !email || !phone || !password) {
       setError('Preencha todos os campos')
+      return
+    }
+    if (!/^\+\d{8,15}$/.test(phone)) {
+      setError('Telefone no formato E.164, ex: +5531999999999')
       return
     }
     if (password.length < 8) {
@@ -38,11 +43,16 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
     setError('')
     setIsLoading(true)
     try {
-      await authService.register(name, email, password)
-      navigate('/dashboard', { replace: true })
+      await authService.register(name, email, phone, password)
+      navigate('/verificar-telefone', { replace: true })
     } catch (err: unknown) {
       const data = (err as { response?: { data?: Record<string, string[]> } })?.response?.data
-      const msg = data?.email?.[0] ?? data?.password?.[0] ?? data?.name?.[0] ?? 'Erro ao criar conta'
+      const msg =
+        data?.phone?.[0] ??
+        data?.email?.[0] ??
+        data?.password?.[0] ??
+        data?.name?.[0] ??
+        'Erro ao criar conta'
       setError(msg)
     } finally {
       setIsLoading(false)
@@ -75,6 +85,21 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
           placeholder="seu@email.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          className={INPUT_CLS}
+          disabled={isLoading}
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="reg-phone" className="text-xs font-semibold uppercase tracking-widest text-muted">
+          Telefone (WhatsApp)
+        </Label>
+        <Input
+          id="reg-phone"
+          type="tel"
+          placeholder="+5531999999999"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
           className={INPUT_CLS}
           disabled={isLoading}
         />

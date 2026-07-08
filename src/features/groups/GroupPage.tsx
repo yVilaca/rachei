@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/auth.store'
 import { useAppStore } from '../../stores/app.store'
@@ -27,6 +27,8 @@ export default function GroupPage() {
   const [addRole, setAddRole] = useState<'admin' | 'member'>('member')
   const [adding, setAdding] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
+  const [phoneStatus, setPhoneStatus] = useState<'idle' | 'checking' | 'exists' | 'not_found'>('idle')
+  const phoneDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (!id) return
@@ -62,19 +64,50 @@ export default function GroupPage() {
     return net
   })()
 
+  const E164_RE = /^\+\d{8,15}$/
+
+  function handleAddPhoneChange(value: string) {
+    setAddPhone(value)
+    setAddError(null)
+
+    if (phoneDebounceRef.current) clearTimeout(phoneDebounceRef.current)
+
+    if (!E164_RE.test(value)) {
+      setPhoneStatus('idle')
+      return
+    }
+
+    setPhoneStatus('checking')
+    phoneDebounceRef.current = setTimeout(async () => {
+      try {
+        const exists = await groupService.checkPhone(value)
+        setPhoneStatus(exists ? 'exists' : 'not_found')
+        if (exists) setAddName('')
+      } catch {
+        setPhoneStatus('idle')
+      }
+    }, 600)
+  }
+
   function openAddModal() {
     setAddPhone('')
     setAddName('')
     setAddRole('member')
     setAddError(null)
+    setPhoneStatus('idle')
+    if (phoneDebounceRef.current) clearTimeout(phoneDebounceRef.current)
     setShowAddModal(true)
   }
 
   async function handleAddMember() {
     const phone = addPhone.trim()
     if (!phone) { setAddError('Informe o telefone.'); return }
-    if (!/^\+\d{8,15}$/.test(phone)) {
+    if (!E164_RE.test(phone)) {
       setAddError('Use o formato E.164, ex: +5511999999999')
+      return
+    }
+    if (phoneStatus === 'not_found' && !addName.trim()) {
+      setAddError('Nome obrigatório para contatos não cadastrados.')
       return
     }
     setAdding(true)
@@ -183,33 +216,62 @@ export default function GroupPage() {
             </div>
 
             <div style={{ fontSize: 12, fontWeight: 700, color: '#6B6B76', marginBottom: 8 }}>TELEFONE (E.164)</div>
-            <input
-              value={addPhone}
-              onChange={(e) => { setAddPhone(e.target.value); setAddError(null) }}
-              placeholder="+5511999999999"
-              maxLength={16}
-              style={{
-                width: '100%', padding: '14px 16px', borderRadius: 14,
-                border: addError ? '2px solid #FF5436' : '2px solid #E8E8EF',
-                fontSize: 15, color: '#1A1A1F', outline: 'none',
-                fontFamily: '"Plus Jakarta Sans", sans-serif',
-                boxSizing: 'border-box', marginBottom: 14,
-              }}
-            />
+            <div style={{ position: 'relative', marginBottom: 14 }}>
+              <input
+                value={addPhone}
+                onChange={(e) => handleAddPhoneChange(e.target.value)}
+                placeholder="+5511999999999"
+                maxLength={16}
+                style={{
+                  width: '100%', padding: '14px 16px', borderRadius: 14,
+                  border: addError ? '2px solid #FF5436' : '2px solid #E8E8EF',
+                  fontSize: 15, color: '#1A1A1F', outline: 'none',
+                  fontFamily: '"Plus Jakarta Sans", sans-serif',
+                  boxSizing: 'border-box',
+                  paddingRight: phoneStatus !== 'idle' ? 44 : 16,
+                }}
+              />
+              {phoneStatus === 'checking' && (
+                <div style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)' }}>
+                  <div style={{
+                    width: 16, height: 16, borderRadius: '50%',
+                    border: '2px solid #E8E8EF', borderTopColor: '#FF5436',
+                    animation: 'spin 0.7s linear infinite',
+                  }} />
+                </div>
+              )}
+              {phoneStatus === 'exists' && (
+                <div style={{
+                  position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
+                  fontSize: 16, color: '#11A36B',
+                }}>✓</div>
+              )}
+              {phoneStatus === 'not_found' && (
+                <div style={{
+                  position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
+                  fontSize: 13, color: '#B0B0BA',
+                }}>?</div>
+              )}
+            </div>
 
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#6B6B76', marginBottom: 8 }}>NOME DO CONTATO</div>
-            <input
-              value={addName}
-              onChange={(e) => { setAddName(e.target.value); setAddError(null) }}
-              placeholder="Nome completo (obrigatório se não cadastrado)"
-              maxLength={150}
-              style={{
-                width: '100%', padding: '14px 16px', borderRadius: 14,
-                border: '2px solid #E8E8EF', fontSize: 15, color: '#1A1A1F', outline: 'none',
-                fontFamily: '"Plus Jakarta Sans", sans-serif',
-                boxSizing: 'border-box', marginBottom: 14,
-              }}
-            />
+            {phoneStatus === 'not_found' && (
+              <>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#6B6B76', marginBottom: 8 }}>NOME DO CONTATO *</div>
+                <input
+                  value={addName}
+                  onChange={(e) => { setAddName(e.target.value); setAddError(null) }}
+                  placeholder="Nome completo"
+                  maxLength={150}
+                  style={{
+                    width: '100%', padding: '14px 16px', borderRadius: 14,
+                    border: addError && !addName.trim() ? '2px solid #FF5436' : '2px solid #E8E8EF',
+                    fontSize: 15, color: '#1A1A1F', outline: 'none',
+                    fontFamily: '"Plus Jakarta Sans", sans-serif',
+                    boxSizing: 'border-box', marginBottom: 14,
+                  }}
+                />
+              </>
+            )}
 
             <div style={{ fontSize: 12, fontWeight: 700, color: '#6B6B76', marginBottom: 8 }}>PAPEL</div>
             <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>

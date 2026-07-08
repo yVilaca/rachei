@@ -6,7 +6,6 @@ import type { GroupSummary, GroupDetail, GroupMember, UserMin, ContatoPendente }
 interface ApiUserMin {
   id: number   // User model usa BigAutoField, não UUID
   name: string
-  avatar_url?: string | null
 }
 
 interface ApiContatoPendente {
@@ -21,7 +20,6 @@ interface ApiGroupMember {
   contato_pendente: ApiContatoPendente | null
   role: 'admin' | 'member'
   status: 'ativo' | 'inativo' | 'pendente_confirmacao' | 'pendente_registro'
-  joined_at: string
 }
 
 interface ApiGroupSummary {
@@ -29,7 +27,6 @@ interface ApiGroupSummary {
   name: string
   emoji?: string
   archived: boolean
-  created_at: string
   member_count: number
 }
 
@@ -38,8 +35,6 @@ interface ApiGroupDetail {
   name: string
   emoji?: string
   archived: boolean
-  created_at: string
-  created_by: ApiUserMin
   members: ApiGroupMember[]
 }
 
@@ -57,11 +52,7 @@ interface PaginatedResponse<T> {
 // ── Transformadores ───────────────────────────────────────────────────────────
 
 function toUserMin(raw: ApiUserMin): UserMin {
-  return {
-    id: String(raw.id),
-    name: raw.name,
-    avatarUrl: raw.avatar_url || undefined,  // "" vira undefined
-  }
+  return { id: String(raw.id), name: raw.name }
 }
 
 function toContatoPendente(raw: ApiContatoPendente): ContatoPendente {
@@ -75,7 +66,6 @@ function toGroupMember(raw: ApiGroupMember): GroupMember {
     contatoPendente: raw.contato_pendente ? toContatoPendente(raw.contato_pendente) : null,
     role: raw.role,
     status: raw.status,
-    joinedAt: raw.joined_at,
   }
 }
 
@@ -85,7 +75,6 @@ function toGroupSummary(raw: ApiGroupSummary): GroupSummary {
     name: raw.name,
     emoji: raw.emoji,
     archived: raw.archived,
-    createdAt: raw.created_at,
     memberCount: raw.member_count,
   }
 }
@@ -96,8 +85,6 @@ function toGroupDetail(raw: ApiGroupDetail): GroupDetail {
     name: raw.name,
     emoji: raw.emoji,
     archived: raw.archived,
-    createdAt: raw.created_at,
-    createdBy: toUserMin(raw.created_by),
     members: raw.members.map(toGroupMember),
   }
 }
@@ -154,5 +141,10 @@ export const groupService = {
 
   async confirmGroup(groupId: string, aceitar: boolean): Promise<void> {
     await api.post(`/api/grupos/${groupId}/confirmar/`, { aceitar })
+  },
+
+  async checkPhone(phone: string): Promise<boolean> {
+    const { data } = await api.get<{ exists: boolean }>('/api/auth/check-phone/', { params: { phone } })
+    return data.exists
   },
 }

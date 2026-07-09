@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/auth.store'
-import { useAppStore } from '../../stores/app.store'
 import { formatCurrency, getInitials } from '../../lib/utils'
 import { avatarFor } from '../../lib/avatar'
 import { useToast } from '../../hooks/useToast'
 import Toast from '../../components/Toast'
 import { groupService } from '../../services/group.service'
-import type { FriendBalance, GroupSummary, User } from '../../types'
+import { debtService } from '../../services/debt.service'
+import type { Debt, GroupSummary, UserMin } from '../../types'
 
 const EMOJI_BG: Record<string, string> = {
   '🏖️': '#FFF0ED', '🏠': '#EDF4FF', '🍕': '#FFF8EC', '🎮': '#F0EDFF', '✈️': '#EDF4FF',
@@ -16,35 +16,38 @@ const EMOJI_BG: Record<string, string> = {
 export default function DashboardPage() {
   const navigate = useNavigate()
   const currentUser = useAuthStore((s) => s.currentUser)
-  const { debts, generateChargeLink } = useAppStore()
   const [debtTab, setDebtTab] = useState<0 | 1>(0)
   const { message: toastMsg, show: showToast } = useToast()
 
   const [groups, setGroups] = useState<GroupSummary[]>([])
+  const [debts, setDebts] = useState<Debt[]>([])
+  const [loading, setLoading] = useState(true)
+
   useEffect(() => {
-    groupService.getGroups().then(setGroups).catch(() => {})
+    let cancelled = false
+    async function load() {
+      try {
+        const grps = await groupService.getGroups()
+        if (cancelled) return
+        setGroups(grps)
+        const allDebts = await Promise.all(grps.map((g) => debtService.getDebtsByGroup(g.id)))
+        if (!cancelled) setDebts(allDebts.flat())
+      } catch {}
+      finally { if (!cancelled) setLoading(false) }
+    }
+    load()
+    return () => { cancelled = true }
   }, [])
 
-  // Mapa de devedores a partir das parcelas — única fonte de User obj disponível sem API de debts
-  const debtorUserMap = useMemo(() => {
-    const map = new Map<string, User>()
-    for (const debt of debts) {
-      for (const inst of debt.installments) {
-        map.set(inst.debtorUserId, inst.debtor)
-      }
-    }
-    return map
-  }, [debts])
-
-  const { totalOwed, totalOwing, friendBalances, myOwed, myCredit } = useMemo(() => {
+  const { totalOwed, totalOwing, balanceEntries, myOwed, myCredit } = useMemo(() => {
     if (!currentUser) return {
       totalOwed: 0, totalOwing: 0,
-      friendBalances: [] as FriendBalance[],
+      balanceEntries: [] as BalanceEntry[],
       myOwed: [] as OwedItem[],
       myCredit: [] as CreditItem[],
     }
 
-    const balanceMap = new Map<string, number>()
+    const balanceMap = new Map<string, { user: UserMin; cents: number }>()
     const myOwed: OwedItem[] = []
     const myCredit: CreditItem[] = []
 
@@ -54,8 +57,12 @@ export default function DashboardPage() {
       for (const inst of debt.installments) {
         if (inst.status === 'paid') continue
 
-        if (debt.paidByUserId === currentUser.id && inst.debtorUserId !== currentUser.id) {
-          balanceMap.set(inst.debtorUserId, (balanceMap.get(inst.debtorUserId) ?? 0) + inst.amountCents)
+        if (debt.paidBy.id === currentUser.id && inst.debtor.id !== currentUser.id) {
+          const prev = balanceMap.get(inst.debtor.id)
+          balanceMap.set(inst.debtor.id, {
+            user: inst.debtor,
+            cents: (prev?.cents ?? 0) + inst.amountCents,
+          })
           myCredit.push({
             installmentId: inst.id,
             debtId: debt.id,
@@ -64,12 +71,16 @@ export default function DashboardPage() {
             amountCents: inst.amountCents,
             status: inst.status,
             debtorName: inst.debtor.name,
-            debtorId: inst.debtorUserId,
+            debtorId: inst.debtor.id,
           })
         }
 
-        if (inst.debtorUserId === currentUser.id && debt.paidByUserId !== currentUser.id) {
-          balanceMap.set(debt.paidByUserId, (balanceMap.get(debt.paidByUserId) ?? 0) - inst.amountCents)
+        if (inst.debtor.id === currentUser.id && debt.paidBy.id !== currentUser.id) {
+          const prev = balanceMap.get(debt.paidBy.id)
+          balanceMap.set(debt.paidBy.id, {
+            user: debt.paidBy,
+            cents: (prev?.cents ?? 0) - inst.amountCents,
+          })
           myOwed.push({
             installmentId: inst.id,
             debtId: debt.id,
@@ -77,8 +88,8 @@ export default function DashboardPage() {
             groupName: grpName,
             amountCents: inst.amountCents,
             status: inst.status,
-            creditorName: debtorUserMap.get(debt.paidByUserId)?.name ?? '—',
-            creditorId: debt.paidByUserId,
+            creditorName: debt.paidBy.name,
+            creditorId: debt.paidBy.id,
           })
         }
       }
@@ -86,30 +97,39 @@ export default function DashboardPage() {
 
     let totalOwed = 0
     let totalOwing = 0
-    const friendBalances: FriendBalance[] = []
+    const balanceEntries: BalanceEntry[] = []
 
-    for (const [userId, balance] of balanceMap.entries()) {
-      const user = debtorUserMap.get(userId)
-      if (!user) continue
-      if (balance > 0) totalOwed += balance
-      else totalOwing += Math.abs(balance)
-      friendBalances.push({ user, balanceCents: balance })
+    for (const { user, cents } of balanceMap.values()) {
+      if (cents > 0) totalOwed += cents
+      else totalOwing += Math.abs(cents)
+      balanceEntries.push({ user, balanceCents: cents })
     }
 
     return {
       totalOwed, totalOwing,
-      friendBalances: friendBalances.sort((a, b) => b.balanceCents - a.balanceCents),
+      balanceEntries: balanceEntries.sort((a, b) => b.balanceCents - a.balanceCents),
       myOwed: myOwed.sort((a, b) => b.amountCents - a.amountCents),
       myCredit: myCredit.sort((a, b) => b.amountCents - a.amountCents),
     }
-  }, [currentUser, debts, groups, debtorUserMap])
+  }, [currentUser, debts, groups])
+
+  const handleCharge = async (installmentId: string) => {
+    try {
+      const token = await debtService.generateChargeLink(installmentId)
+      const url = `${window.location.origin}/pagar/${token}`
+      await navigator.clipboard.writeText(url)
+      showToast('Link copiado!')
+    } catch {
+      showToast('Erro ao gerar link.')
+    }
+  }
 
   if (!currentUser) return null
 
   const net = totalOwed - totalOwing
   const netText = (net >= 0 ? '+' : '') + formatCurrency(net)
   const netSub = net > 0
-    ? 'Te devem mais do que você deve 🎉'
+    ? 'Te devem mais do que você deve'
     : net < 0
     ? 'Você deve mais do que te devem'
     : 'Tudo quitado!'
@@ -122,7 +142,6 @@ export default function DashboardPage() {
       className="no-scrollbar min-h-dvh overflow-auto"
       style={{ background: '#F5F5F8', fontFamily: '"Plus Jakarta Sans", sans-serif', paddingBottom: 110 }}
     >
-      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '52px 20px 14px' }}>
         <div>
           <div style={{ fontSize: 13, color: '#6B6B76', fontWeight: 600 }}>Olá, {currentUser.name.split(' ')[0]} 👋</div>
@@ -145,7 +164,6 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      {/* Balance card */}
       <div style={{ padding: '0 20px' }}>
         <div style={{
           borderRadius: 28, padding: '24px 22px',
@@ -155,26 +173,35 @@ export default function DashboardPage() {
         }}>
           <div style={{ position: 'absolute', right: -34, top: -34, width: 150, height: 150, borderRadius: '50%', background: 'rgba(255,255,255,.12)' }} />
           <div style={{ position: 'absolute', right: 30, bottom: -50, width: 90, height: 90, borderRadius: '50%', background: 'rgba(255,255,255,.08)' }} />
-          <div style={{ fontSize: 12.5, opacity: .92, fontWeight: 600, position: 'relative' }}>Saldo geral consolidado</div>
-          <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 40, lineHeight: 1.05, margin: '6px 0 4px', letterSpacing: '-.02em', position: 'relative' }}>
-            {netText}
-          </div>
-          <div style={{ fontSize: 12.5, opacity: .94, position: 'relative' }}>{netSub}</div>
+          {loading ? (
+            <div style={{ height: 80, opacity: .5 }} />
+          ) : (
+            <>
+              <div style={{ fontSize: 12.5, opacity: .92, fontWeight: 600, position: 'relative' }}>Saldo geral consolidado</div>
+              <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 40, lineHeight: 1.05, margin: '6px 0 4px', letterSpacing: '-.02em', position: 'relative' }}>
+                {netText}
+              </div>
+              <div style={{ fontSize: 12.5, opacity: .94, position: 'relative' }}>{netSub}</div>
+            </>
+          )}
           <div style={{ display: 'flex', gap: 10, marginTop: 18, position: 'relative' }}>
             <div style={{ flex: 1, background: 'rgba(255,255,255,.18)', borderRadius: 15, padding: '11px 13px' }}>
               <div style={{ fontSize: 10.5, opacity: .9, fontWeight: 700 }}>↗ TE DEVEM</div>
-              <div style={{ fontWeight: 800, fontSize: 16, marginTop: 3, whiteSpace: 'nowrap' }}>{formatCurrency(totalOwed)}</div>
+              <div style={{ fontWeight: 800, fontSize: 16, marginTop: 3, whiteSpace: 'nowrap' }}>
+                {loading ? '—' : formatCurrency(totalOwed)}
+              </div>
             </div>
             <div style={{ flex: 1, background: 'rgba(0,0,0,.16)', borderRadius: 15, padding: '11px 13px' }}>
               <div style={{ fontSize: 10.5, opacity: .9, fontWeight: 700 }}>↙ VOCÊ DEVE</div>
-              <div style={{ fontWeight: 800, fontSize: 16, marginTop: 3, whiteSpace: 'nowrap' }}>{formatCurrency(totalOwing)}</div>
+              <div style={{ fontWeight: 800, fontSize: 16, marginTop: 3, whiteSpace: 'nowrap' }}>
+                {loading ? '—' : formatCurrency(totalOwing)}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Minhas dívidas */}
-      {totalItems > 0 && (
+      {!loading && totalItems > 0 && (
         <div style={{ padding: '24px 20px 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <span style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 700, fontSize: 16, color: '#15151A' }}>
@@ -222,7 +249,6 @@ export default function DashboardPage() {
                 background: '#fff', borderRadius: 18, padding: '20px 16px',
                 textAlign: 'center', boxShadow: '0 2px 10px rgba(0,0,0,.04)',
               }}>
-                <div style={{ fontSize: 28, marginBottom: 6 }}>{debtTab === 0 ? '💸' : '🎉'}</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#15151A' }}>
                   {debtTab === 0 ? 'Nenhuma cobrança pendente' : 'Você não deve nada!'}
                 </div>
@@ -234,31 +260,29 @@ export default function DashboardPage() {
               activeList.map((item) =>
                 debtTab === 1
                   ? <OwedCard key={item.installmentId} item={item as OwedItem} onOpen={() => navigate(`/dividas/${item.debtId}`)} />
-                  : <CreditCard key={item.installmentId} item={item as CreditItem} onCharge={() => {
-                      const link = generateChargeLink(item.installmentId)
-                      navigator.clipboard.writeText(link).then(() => showToast('Link copiado!')).catch(() => showToast('Link copiado!'))
-                    }} onOpen={() => navigate(`/dividas/${item.debtId}`)} />
+                  : <CreditCard key={item.installmentId} item={item as CreditItem}
+                      onCharge={() => handleCharge(item.installmentId)}
+                      onOpen={() => navigate(`/dividas/${item.debtId}`)} />
               )
             )}
           </div>
         </div>
       )}
 
-      {/* Por amigo */}
-      {friendBalances.length > 0 && (
+      {!loading && balanceEntries.length > 0 && (
         <div style={{ padding: '24px 20px 0' }}>
           <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 700, fontSize: 16, color: '#15151A', marginBottom: 12 }}>
             Por amigo
           </div>
           <div style={{ background: '#fff', borderRadius: 22, padding: 4, boxShadow: '0 2px 12px rgba(0,0,0,.04)' }}>
-            {friendBalances.map((fb, i) => {
-              const av = avatarFor(fb.user.id)
-              const isPos = fb.balanceCents > 0
+            {balanceEntries.map((entry, i) => {
+              const av = avatarFor(entry.user.id)
+              const isPos = entry.balanceCents > 0
               return (
-                <div key={fb.user.id} style={{
+                <div key={entry.user.id} style={{
                   display: 'flex', alignItems: 'center', gap: 12,
                   padding: '12px 14px',
-                  borderBottom: i < friendBalances.length - 1 ? '1px solid #F0F0F3' : 'none',
+                  borderBottom: i < balanceEntries.length - 1 ? '1px solid #F0F0F3' : 'none',
                 }}>
                   <div style={{
                     width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
@@ -266,14 +290,14 @@ export default function DashboardPage() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontWeight: 800, fontSize: 13,
                   }}>
-                    {getInitials(fb.user.name)}
+                    {getInitials(entry.user.name)}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: 14.5, color: '#1A1A1F' }}>{fb.user.name}</div>
+                    <div style={{ fontWeight: 700, fontSize: 14.5, color: '#1A1A1F' }}>{entry.user.name}</div>
                     <div style={{ fontSize: 11.5, color: '#6B6B76' }}>{isPos ? 'te deve' : 'você deve'}</div>
                   </div>
                   <div style={{ fontWeight: 800, fontSize: 14.5, color: isPos ? '#0E8F5C' : '#FF5436', whiteSpace: 'nowrap' }}>
-                    {isPos ? '+' : '−'}{formatCurrency(Math.abs(fb.balanceCents))}
+                    {isPos ? '+' : '−'}{formatCurrency(Math.abs(entry.balanceCents))}
                   </div>
                 </div>
               )
@@ -284,7 +308,6 @@ export default function DashboardPage() {
 
       <Toast message={toastMsg} />
 
-      {/* Seus grupos */}
       <div style={{ padding: '24px 20px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <span style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 700, fontSize: 16, color: '#15151A' }}>
@@ -298,7 +321,7 @@ export default function DashboardPage() {
           </button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {groups.length === 0 && (
+          {!loading && groups.length === 0 && (
             <div style={{ textAlign: 'center', color: '#6B6B76', fontSize: 13, padding: '12px 0' }}>
               Nenhum grupo ainda.
             </div>
@@ -337,6 +360,11 @@ export default function DashboardPage() {
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+
+interface BalanceEntry {
+  user: UserMin
+  balanceCents: number
+}
 
 interface OwedItem {
   installmentId: string
@@ -393,23 +421,15 @@ function OwedCard({ item, onOpen }: { item: OwedItem; onOpen: () => void }) {
         </div>
       </div>
 
-      {isAwaiting ? (
-        <div style={{
-          marginTop: 12, background: '#FFF8EE', borderRadius: 11,
-          padding: '9px 12px', fontSize: 12.5, fontWeight: 700, color: '#A88A4E', textAlign: 'center',
-        }}>
-          ⏳ Comprovante enviado · aguardando confirmação
-        </div>
-      ) : (
-        <button onClick={onOpen} style={{
-          marginTop: 12, width: '100%', padding: '10px',
-          borderRadius: 11, fontWeight: 800, fontSize: 13.5,
-          background: '#FFF0ED', color: '#FF5436',
-          border: 'none', cursor: 'pointer',
-        }}>
-          Ver detalhes e pagar
-        </button>
-      )}
+      <button onClick={onOpen} style={{
+        marginTop: 12, width: '100%', padding: '10px',
+        borderRadius: 11, fontWeight: 800, fontSize: 13.5,
+        background: isAwaiting ? '#F5F5F8' : '#FFF0ED',
+        color: isAwaiting ? '#6B6B76' : '#FF5436',
+        border: 'none', cursor: 'pointer',
+      }}>
+        {isAwaiting ? 'Acompanhar' : 'Ver detalhes e pagar'}
+      </button>
     </div>
   )
 }
@@ -447,38 +467,38 @@ function CreditCard({ item, onCharge, onOpen }: { item: CreditItem; onCharge: ()
         </div>
       </div>
 
-      {isAwaiting ? (
-        <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+      <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+        {isAwaiting ? (
           <button onClick={onOpen} style={{
             flex: 1, padding: '10px', borderRadius: 11,
             fontWeight: 800, fontSize: 13, background: '#11A36B', color: '#fff',
             border: 'none', cursor: 'pointer',
           }}>
-            Revisar comprovante
+            Revisar
           </button>
-        </div>
-      ) : (
-        <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-          <button onClick={onCharge} style={{
-            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            padding: '10px', borderRadius: 11,
-            fontWeight: 800, fontSize: 13, background: '#E9F9F0', color: '#0E8F5C',
-            border: 'none', cursor: 'pointer',
-          }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="#0E8F5C">
-              <path d="M12 2a10 10 0 00-8.6 15l-1.3 4.8 4.9-1.3A10 10 0 1012 2zm5.5 14.3c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.2-.7-2.7-1.1-4.4-3.9-4.5-4-.1-.2-1-1.4-1-2.6s.6-1.8.9-2.1c.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.1.1.3 0 .5l-.4.5c-.1.2-.3.3-.1.6.1.2.6 1 1.3 1.6.9.8 1.6 1 1.9 1.2.2.1.4.1.5-.1l.6-.8c.2-.2.4-.2.6-.1l1.9.9c.2.1.4.2.4.3.1.1.1.6-.1 1.2z"/>
-            </svg>
-            Cobrar via WhatsApp
-          </button>
-          <button onClick={onOpen} style={{
-            padding: '10px 14px', borderRadius: 11,
-            fontWeight: 700, fontSize: 13, background: '#F5F5F8', color: '#6B6B76',
-            border: 'none', cursor: 'pointer',
-          }}>
-            Ver
-          </button>
-        </div>
-      )}
+        ) : (
+          <>
+            <button onClick={onCharge} style={{
+              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              padding: '10px', borderRadius: 11,
+              fontWeight: 800, fontSize: 13, background: '#E9F9F0', color: '#0E8F5C',
+              border: 'none', cursor: 'pointer',
+            }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="#0E8F5C">
+                <path d="M12 2a10 10 0 00-8.6 15l-1.3 4.8 4.9-1.3A10 10 0 1012 2zm5.5 14.3c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.2-.7-2.7-1.1-4.4-3.9-4.5-4-.1-.2-1-1.4-1-2.6s.6-1.8.9-2.1c.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.1.1.3 0 .5l-.4.5c-.1.2-.3.3-.1.6.1.2.6 1 1.3 1.6.9.8 1.6 1 1.9 1.2.2.1.4.1.5-.1l.6-.8c.2-.2.4-.2.6-.1l1.9.9c.2.1.4.2.4.3.1.1.1.6-.1 1.2z"/>
+              </svg>
+              Cobrar
+            </button>
+            <button onClick={onOpen} style={{
+              padding: '10px 14px', borderRadius: 11,
+              fontWeight: 700, fontSize: 13, background: '#F5F5F8', color: '#6B6B76',
+              border: 'none', cursor: 'pointer',
+            }}>
+              Ver
+            </button>
+          </>
+        )}
+      </div>
     </div>
   )
 }

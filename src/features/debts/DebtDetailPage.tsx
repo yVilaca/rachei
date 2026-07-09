@@ -331,21 +331,6 @@ function DebtorView({
           </div>
         )}
 
-        {isAwaiting && (
-          <div style={{
-            background: '#FFF8EE', border: '1px solid #FCE6C0',
-            borderRadius: 16, padding: '16px 18px', marginBottom: 14,
-            display: 'flex', alignItems: 'flex-start', gap: 12,
-          }}>
-            <span style={{ fontSize: 22, lineHeight: 1 }}>⏳</span>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#1A1A1F' }}>Pagamento declarado</div>
-              <div style={{ fontSize: 12.5, color: '#A88A4E', marginTop: 3, lineHeight: 1.45 }}>
-                Aguardando {creditorName} confirmar o recebimento.
-              </div>
-            </div>
-          </div>
-        )}
 
         {isPaid && (
           <div style={{
@@ -446,11 +431,6 @@ function DebtorView({
           </div>
         )}
 
-        {isPending && (
-          <div style={{ textAlign: 'center', fontSize: 12, color: '#A5A5AE', marginTop: 16, lineHeight: 1.5 }}>
-            Confirmação dupla: {creditorName} precisa<br />confirmar antes de quitar a dívida.
-          </div>
-        )}
       </div>
 
       {isPending && (

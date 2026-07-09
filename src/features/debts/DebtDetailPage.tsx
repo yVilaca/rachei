@@ -463,22 +463,6 @@ function DebtorView({
         </div>
       )}
 
-      {isAwaiting && (
-        <div style={{
-          position: 'fixed', bottom: 0, left: 0, right: 0,
-          padding: '14px 22px 36px',
-          background: 'linear-gradient(0deg, #fff 70%, rgba(255,255,255,0))',
-          zIndex: 10,
-        }}>
-          <div style={{
-            width: '100%', padding: 16, borderRadius: 16,
-            fontWeight: 700, fontSize: 15, textAlign: 'center',
-            background: '#FFF8EE', color: '#B57400',
-          }}>
-            ⏳ Aguardando confirmação de {creditorName}
-          </div>
-        </div>
-      )}
     </div>
   )
 }

@@ -203,14 +203,14 @@ function DebtorView({
   }
 
   const handleSubmit = async () => {
-    if (!proofFile || sending) return
+    if (sending) return
     setSending(true)
     try {
-      const fileUrl = URL.createObjectURL(proofFile)
+      const fileUrl = proofFile ? URL.createObjectURL(proofFile) : undefined
       await debtService.sendProof(installment.id, fileUrl)
       onRefresh()
     } catch {
-      showToast('Erro ao enviar comprovante.')
+      showToast('Erro ao declarar pagamento.')
       setSending(false)
     }
   }
@@ -339,7 +339,7 @@ function DebtorView({
           }}>
             <span style={{ fontSize: 22, lineHeight: 1 }}>⏳</span>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#1A1A1F' }}>Comprovante enviado</div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#1A1A1F' }}>Pagamento declarado</div>
               <div style={{ fontSize: 12.5, color: '#A88A4E', marginTop: 3, lineHeight: 1.45 }}>
                 Aguardando {creditorName} confirmar o recebimento.
               </div>
@@ -448,7 +448,7 @@ function DebtorView({
 
         {isPending && (
           <div style={{ textAlign: 'center', fontSize: 12, color: '#A5A5AE', marginTop: 16, lineHeight: 1.5 }}>
-            Confirmação dupla: {creditorName} revisa seu<br />comprovante antes de quitar a dívida.
+            Confirmação dupla: {creditorName} precisa<br />confirmar antes de quitar a dívida.
           </div>
         )}
       </div>
@@ -462,22 +462,22 @@ function DebtorView({
         }}>
           <button
             onClick={handleSubmit}
-            disabled={!proofFile || sending}
+            disabled={sending}
             style={{
               width: '100%', padding: 16, borderRadius: 16,
               fontWeight: 800, fontSize: 16, border: 'none',
-              cursor: proofFile && !sending ? 'pointer' : 'not-allowed',
-              background: proofFile && !sending ? 'linear-gradient(135deg,#FF5436,#FF8A3D)' : '#EBEBEF',
-              color: proofFile && !sending ? '#fff' : '#6B6B76',
-              boxShadow: proofFile && !sending ? '0 8px 18px rgba(255,84,54,.3)' : 'none',
+              cursor: sending ? 'not-allowed' : 'pointer',
+              background: sending ? '#EBEBEF' : 'linear-gradient(135deg,#FF5436,#FF8A3D)',
+              color: sending ? '#6B6B76' : '#fff',
+              boxShadow: sending ? 'none' : '0 8px 18px rgba(255,84,54,.3)',
               transition: 'background .2s, box-shadow .2s',
             }}
           >
-            {sending ? 'Enviando...' : 'Enviar comprovante'}
+            {sending ? 'Enviando...' : proofFile ? 'Enviar comprovante' : 'Já paguei'}
           </button>
           {!proofFile && (
-            <div style={{ textAlign: 'center', fontSize: 12, color: '#6B6B76', marginTop: 8 }}>
-              Anexe o comprovante para habilitar
+            <div style={{ textAlign: 'center', fontSize: 12, color: '#A5A5AE', marginTop: 8 }}>
+              Ou anexe um comprovante acima para maior segurança
             </div>
           )}
         </div>
@@ -577,8 +577,10 @@ function CreditorInstallmentCard({ installment, isOwn, onCharge, onConfirm, onRe
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
             }}>🧾</div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1A1A1F' }}>Comprovante recebido</div>
-              <div style={{ fontSize: 11, color: '#A88A4E' }}>Enviado por {installment.debtor.name}</div>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1A1A1F' }}>
+                {installment.proof ? 'Comprovante recebido' : 'Pagamento declarado'}
+              </div>
+              <div style={{ fontSize: 11, color: '#A88A4E' }}>Por {installment.debtor.name}</div>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>

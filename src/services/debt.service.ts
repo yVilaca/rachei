@@ -95,8 +95,8 @@ export const debtService = {
     return toDebt(data)
   },
 
-  async sendProof(installmentId: string, fileUrl: string): Promise<void> {
-    await api.post(`/api/parcelas/${installmentId}/comprovante/`, { file_url: fileUrl })
+  async sendProof(installmentId: string, fileUrl?: string): Promise<void> {
+    await api.post(`/api/parcelas/${installmentId}/comprovante/`, fileUrl ? { file_url: fileUrl } : {})
   },
 
   async confirmPayment(installmentId: string): Promise<void> {

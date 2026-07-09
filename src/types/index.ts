@@ -56,41 +56,24 @@ export type Group = GroupDetail
 export interface Debt {
   id: string
   groupId: string
+  groupName?: string
   description: string
   totalAmountCents: number
-  paidByUserId: string
+  paidBy: UserMin
   splitType: SplitType
-  createdBy: string
   createdAt: string
   installments: Installment[]
 }
 
 export interface Installment {
   id: string
-  debtId: string
-  debtorUserId: string
+  debtor: UserMin
   amountCents: number
   status: InstallmentStatus
   paidAt?: string
   confirmedAt?: string
-  proof?: PaymentProof
-  chargeLink?: ChargeLink
-  debtor: User
-}
-
-export interface PaymentProof {
-  id: string
-  installmentId: string
-  fileUrl: string
-  uploadedAt: string
-}
-
-export interface ChargeLink {
-  id: string
-  installmentId: string
-  token: string
-  expiresAt: string
-  usedAt?: string
+  proof?: { id: string; fileUrl: string; uploadedAt: string }
+  chargeLinkToken?: string
 }
 
 export interface NewDebtInput {

@@ -1,57 +1,107 @@
-import { useState, useRef } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useAppStore } from '../../stores/app.store'
 import { useAuthStore } from '../../stores/auth.store'
 import { formatCurrency, formatDate, getInitials } from '../../lib/utils'
 import { avatarFor } from '../../lib/avatar'
 import { useToast } from '../../hooks/useToast'
 import Toast from '../../components/Toast'
-import type { Debt, Group, Installment, User } from '../../types'
+import { debtService } from '../../services/debt.service'
+import type { Debt, Installment } from '../../types'
 
 // ── Root ───────────────────────────────────────────────────────────────────────
 
 export default function DebtDetailPage() {
   const { id } = useParams<{ id: string }>()
   const currentUser = useAuthStore((s) => s.currentUser)
-  const { debts, groups } = useAppStore()
+  const [debt, setDebt] = useState<Debt | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const debt = debts.find((d) => d.id === id)
-  if (!debt || !currentUser) {
+  const load = async () => {
+    if (!id) return
+    try {
+      setError(null)
+      const d = await debtService.getDebt(id)
+      setDebt(d)
+    } catch {
+      setError('Dívida não encontrada ou sem acesso.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (loading) {
     return (
       <div style={{ display: 'flex', minHeight: '100dvh', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: '#6B6B76' }}>Dívida não encontrada</p>
+        <p style={{ color: '#6B6B76' }}>Carregando...</p>
       </div>
     )
   }
 
-  const group = groups.find((g) => g.id === debt.groupId)
-  const isCreditor = debt.paidByUserId === currentUser.id
+  if (error || !debt || !currentUser) {
+    return (
+      <div style={{ display: 'flex', minHeight: '100dvh', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#6B6B76' }}>{error ?? 'Dívida não encontrada'}</p>
+      </div>
+    )
+  }
+
+  const isCreditor = debt.paidBy.id === currentUser.id
   const myInstallment = debt.installments.find(
-    (i) => i.debtorUserId === currentUser.id && debt.paidByUserId !== currentUser.id,
+    (i) => i.debtor.id === currentUser.id && debt.paidBy.id !== currentUser.id,
   )
 
   if (!isCreditor && myInstallment) {
-    return <DebtorView debt={debt} group={group} installment={myInstallment} currentUser={currentUser} />
+    return <DebtorView debt={debt} installment={myInstallment} currentUser={currentUser} onRefresh={load} />
   }
 
-  return <CreditorView debt={debt} group={group} currentUser={currentUser} />
+  return <CreditorView debt={debt} currentUser={currentUser} onRefresh={load} />
 }
 
 // ── CreditorView ───────────────────────────────────────────────────────────────
 
-function CreditorView({ debt, group, currentUser }: { debt: Debt; group?: Group; currentUser: User }) {
+function CreditorView({ debt, currentUser, onRefresh }: { debt: Debt; currentUser: { id: string; name: string }; onRefresh: () => void }) {
   const navigate = useNavigate()
-  const { generateChargeLink, updateInstallmentStatus } = useAppStore()
   const { message: toastMsg, show: showToast } = useToast()
 
-  const creditorName = 'Você'
+  const creditorName = debt.paidBy.id === currentUser.id ? 'Você' : debt.paidBy.name
   const splitLabel = debt.splitType === 'equal' ? 'Igualitária' : 'Personalizada'
   const paidCount = debt.installments.filter((i) => i.status === 'paid').length
+
+  const handleCharge = async (inst: Installment) => {
+    try {
+      const token = await debtService.generateChargeLink(inst.id)
+      const url = `${window.location.origin}/pagar/${token}`
+      await navigator.clipboard.writeText(url)
+      showToast('Link copiado!')
+    } catch {
+      showToast('Erro ao gerar link.')
+    }
+  }
+
+  const handleConfirm = async (inst: Installment) => {
+    try {
+      await debtService.confirmPayment(inst.id)
+      onRefresh()
+    } catch {
+      showToast('Erro ao confirmar pagamento.')
+    }
+  }
+
+  const handleReject = async (inst: Installment) => {
+    try {
+      await debtService.rejectPayment(inst.id)
+      onRefresh()
+    } catch {
+      showToast('Erro ao rejeitar comprovante.')
+    }
+  }
 
   return (
     <div style={{ minHeight: '100dvh', background: '#F5F5F8', fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
       <Toast message={toastMsg} />
-      {/* Coral header */}
       <div style={{ background: 'linear-gradient(150deg,#FF5436,#FF8A3D)', padding: '52px 20px 26px', color: '#fff' }}>
         <button onClick={() => navigate(-1)} style={{
           display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -63,7 +113,7 @@ function CreditorView({ debt, group, currentUser }: { debt: Debt; group?: Group;
           </svg>
           Voltar
         </button>
-        <div style={{ fontSize: 13, opacity: .9, fontWeight: 600 }}>{group?.name}</div>
+        <div style={{ fontSize: 13, opacity: .9, fontWeight: 600 }}>{debt.groupName}</div>
         <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 26, margin: '3px 0 14px', letterSpacing: '-.01em' }}>
           {debt.description}
         </div>
@@ -86,7 +136,6 @@ function CreditorView({ debt, group, currentUser }: { debt: Debt; group?: Group;
       </div>
 
       <div style={{ padding: '18px 20px 120px' }}>
-        {/* Progress summary */}
         <div style={{
           background: '#fff', borderRadius: 16, padding: '13px 16px',
           display: 'flex', alignItems: 'center', gap: 12,
@@ -101,24 +150,18 @@ function CreditorView({ debt, group, currentUser }: { debt: Debt; group?: Group;
           <ProgressBar value={paidCount} max={debt.installments.length} />
         </div>
 
-        {/* Installments */}
         <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 700, fontSize: 15, color: '#15151A', marginBottom: 12 }}>
           Parcelas por devedor
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {debt.installments.map((inst, idx) => (
+          {debt.installments.map((inst) => (
             <CreditorInstallmentCard
               key={inst.id}
               installment={inst}
-              creditorName={creditorName}
-              index={idx}
-              onCharge={() => {
-                const link = generateChargeLink(inst.id)
-                navigator.clipboard.writeText(link).then(() => showToast('Link copiado!')).catch(() => showToast('Link copiado!'))
-              }}
-              onConfirm={() => updateInstallmentStatus(inst.id, 'paid')}
-              onReject={() => updateInstallmentStatus(inst.id, 'pending')}
-              isOwn={inst.debtorUserId === currentUser.id}
+              isOwn={inst.debtor.id === currentUser.id}
+              onCharge={() => handleCharge(inst)}
+              onConfirm={() => handleConfirm(inst)}
+              onReject={() => handleReject(inst)}
             />
           ))}
         </div>
@@ -130,49 +173,51 @@ function CreditorView({ debt, group, currentUser }: { debt: Debt; group?: Group;
 // ── DebtorView ─────────────────────────────────────────────────────────────────
 
 function DebtorView({
-  debt, group, installment, currentUser,
+  debt, installment, currentUser, onRefresh,
 }: {
-  debt: Debt; group?: Group; installment: Installment; currentUser: User
+  debt: Debt; installment: Installment; currentUser: { id: string; name: string }; onRefresh: () => void
 }) {
   const navigate = useNavigate()
-  const { updateInstallmentStatus, groups } = useAppStore()
+  const { message: toastMsg, show: showToast } = useToast()
   const [proofFile, setProofFile] = useState<File | null>(null)
   const [proofName, setProofName] = useState<string | null>(null)
   const [showOthers, setShowOthers] = useState(false)
+  const [sending, setSending] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const allMembers = groups.flatMap((g) => g.members)
-  const creditor = allMembers.find((m) => m.userId === debt.paidByUserId)?.user
-  const creditorName = creditor?.name ?? '—'
-  const creditorAv = avatarFor(debt.paidByUserId)
+  const creditorName = debt.paidBy.name
+  const creditorAv = avatarFor(debt.paidBy.id)
 
   const { status } = installment
   const paidCount = debt.installments.filter((i) => i.status === 'paid').length
   const totalCount = debt.installments.length
+  const others = debt.installments.filter((i) => i.debtor.id !== currentUser.id)
 
-  const others = debt.installments.filter((i) => i.debtorUserId !== currentUser.id)
+  const isPending = status === 'pending'
+  const isAwaiting = status === 'awaiting_confirmation'
+  const isPaid = status === 'paid'
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) { setProofFile(file); setProofName(file.name) }
   }
 
-  const handleSubmit = () => {
-    updateInstallmentStatus(
-      installment.id,
-      'awaiting_confirmation',
-      proofFile ? URL.createObjectURL(proofFile) : undefined,
-    )
+  const handleSubmit = async () => {
+    if (!proofFile || sending) return
+    setSending(true)
+    try {
+      const fileUrl = URL.createObjectURL(proofFile)
+      await debtService.sendProof(installment.id, fileUrl)
+      onRefresh()
+    } catch {
+      showToast('Erro ao enviar comprovante.')
+      setSending(false)
+    }
   }
-
-  const isPending = status === 'pending'
-  const isAwaiting = status === 'awaiting_confirmation'
-  const isPaid = status === 'paid'
 
   return (
     <div style={{ minHeight: '100dvh', background: '#F5F5F8', fontFamily: '"Plus Jakarta Sans", sans-serif', paddingBottom: 120 }}>
-
-      {/* Header */}
+      <Toast message={toastMsg} />
       <div style={{ background: '#fff', padding: '52px 20px 18px', borderBottom: '1px solid #EEEEF2' }}>
         <button onClick={() => navigate(-1)} style={{
           display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -184,15 +229,13 @@ function DebtorView({
           </svg>
           Voltar
         </button>
-        <div style={{ fontSize: 12, color: '#6B6B76', fontWeight: 600, marginBottom: 2 }}>{group?.name ?? ''}</div>
+        <div style={{ fontSize: 12, color: '#6B6B76', fontWeight: 600, marginBottom: 2 }}>{debt.groupName ?? ''}</div>
         <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 22, color: '#15151A', letterSpacing: '-.01em' }}>
           {debt.description}
         </div>
       </div>
 
       <div style={{ padding: '20px 20px 0' }}>
-
-        {/* Hero: quanto você deve */}
         <div style={{
           background: isPaid ? '#E9F9F0' : '#fff',
           borderRadius: 22, padding: '20px 20px 18px',
@@ -211,8 +254,6 @@ function DebtorView({
           }}>
             {formatCurrency(installment.amountCents)}
           </div>
-
-          {/* Para quem */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{
               width: 36, height: 36, borderRadius: '50%',
@@ -232,7 +273,6 @@ function DebtorView({
           </div>
         </div>
 
-        {/* Progresso geral */}
         <div style={{
           background: '#fff', borderRadius: 16, padding: '13px 16px',
           display: 'flex', alignItems: 'center', gap: 14,
@@ -247,15 +287,12 @@ function DebtorView({
           <ProgressBar value={paidCount} max={totalCount} />
         </div>
 
-        {/* ─── Estado pending: upload + enviar ─── */}
         {isPending && (
           <div style={{ background: '#fff', borderRadius: 18, padding: 18, boxShadow: '0 2px 10px rgba(0,0,0,.04)', marginBottom: 14 }}>
             <div style={{ fontSize: 11.5, fontWeight: 800, color: '#6B6B76', letterSpacing: '.05em', marginBottom: 12 }}>
               ANEXAR COMPROVANTE
             </div>
-
             <input ref={inputRef} type="file" accept="image/*,.pdf" style={{ display: 'none' }} onChange={handleFileChange} />
-
             {proofName ? (
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 12,
@@ -294,7 +331,6 @@ function DebtorView({
           </div>
         )}
 
-        {/* ─── Estado awaiting ─── */}
         {isAwaiting && (
           <div style={{
             background: '#FFF8EE', border: '1px solid #FCE6C0',
@@ -303,17 +339,14 @@ function DebtorView({
           }}>
             <span style={{ fontSize: 22, lineHeight: 1 }}>⏳</span>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#1A1A1F' }}>
-                Comprovante enviado
-              </div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#1A1A1F' }}>Comprovante enviado</div>
               <div style={{ fontSize: 12.5, color: '#A88A4E', marginTop: 3, lineHeight: 1.45 }}>
-                Aguardando {creditorName} confirmar o recebimento. Você será notificado assim que confirmado.
+                Aguardando {creditorName} confirmar o recebimento.
               </div>
             </div>
           </div>
         )}
 
-        {/* ─── Estado paid ─── */}
         {isPaid && (
           <div style={{
             background: '#E9F9F0', border: '1px solid #BEE9D2',
@@ -331,7 +364,6 @@ function DebtorView({
           </div>
         )}
 
-        {/* Detalhes da dívida */}
         <div style={{
           background: '#fff', borderRadius: 18, padding: 18,
           boxShadow: '0 2px 10px rgba(0,0,0,.04)', marginBottom: 14,
@@ -340,7 +372,7 @@ function DebtorView({
             Detalhes da dívida
           </div>
           {([
-            ['Grupo', group?.name ?? '—'],
+            ['Grupo', debt.groupName ?? '—'],
             ['Data', formatDate(debt.createdAt)],
             ['Divisão', debt.splitType === 'equal' ? 'Igualitária' : 'Personalizada'],
             ['Total da despesa', formatCurrency(debt.totalAmountCents)],
@@ -358,7 +390,6 @@ function DebtorView({
           ))}
         </div>
 
-        {/* Outros participantes (collapsible) */}
         {others.length > 0 && (
           <div style={{ background: '#fff', borderRadius: 18, boxShadow: '0 2px 10px rgba(0,0,0,.04)' }}>
             <button
@@ -379,12 +410,11 @@ function DebtorView({
                 </svg>
               </div>
             </button>
-
             {showOthers && (
               <div style={{ padding: '0 18px 14px', borderTop: '1px solid #F0F0F4' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 14 }}>
                   {others.map((inst) => {
-                    const av = avatarFor(inst.debtorUserId)
+                    const av = avatarFor(inst.debtor.id)
                     const st = inst.status === 'paid'
                       ? { label: 'Pago', color: '#0E8F5C' }
                       : inst.status === 'awaiting_confirmation'
@@ -416,7 +446,6 @@ function DebtorView({
           </div>
         )}
 
-        {/* Confirmação dupla note */}
         {isPending && (
           <div style={{ textAlign: 'center', fontSize: 12, color: '#A5A5AE', marginTop: 16, lineHeight: 1.5 }}>
             Confirmação dupla: {creditorName} revisa seu<br />comprovante antes de quitar a dívida.
@@ -424,7 +453,6 @@ function DebtorView({
         )}
       </div>
 
-      {/* Sticky CTA */}
       {isPending && (
         <div style={{
           position: 'fixed', bottom: 0, left: 0, right: 0,
@@ -434,17 +462,18 @@ function DebtorView({
         }}>
           <button
             onClick={handleSubmit}
-            disabled={!proofFile}
+            disabled={!proofFile || sending}
             style={{
               width: '100%', padding: 16, borderRadius: 16,
-              fontWeight: 800, fontSize: 16, border: 'none', cursor: proofFile ? 'pointer' : 'not-allowed',
-              background: proofFile ? 'linear-gradient(135deg,#FF5436,#FF8A3D)' : '#EBEBEF',
-              color: proofFile ? '#fff' : '#6B6B76',
-              boxShadow: proofFile ? '0 8px 18px rgba(255,84,54,.3)' : 'none',
+              fontWeight: 800, fontSize: 16, border: 'none',
+              cursor: proofFile && !sending ? 'pointer' : 'not-allowed',
+              background: proofFile && !sending ? 'linear-gradient(135deg,#FF5436,#FF8A3D)' : '#EBEBEF',
+              color: proofFile && !sending ? '#fff' : '#6B6B76',
+              boxShadow: proofFile && !sending ? '0 8px 18px rgba(255,84,54,.3)' : 'none',
               transition: 'background .2s, box-shadow .2s',
             }}
           >
-            Enviar comprovante
+            {sending ? 'Enviando...' : 'Enviar comprovante'}
           </button>
           {!proofFile && (
             <div style={{ textAlign: 'center', fontSize: 12, color: '#6B6B76', marginTop: 8 }}>
@@ -478,8 +507,6 @@ function DebtorView({
 
 interface CICardProps {
   installment: Installment
-  creditorName: string
-  index: number
   isOwn: boolean
   onCharge: () => void
   onConfirm: () => void
@@ -487,7 +514,7 @@ interface CICardProps {
 }
 
 function CreditorInstallmentCard({ installment, isOwn, onCharge, onConfirm, onReject }: CICardProps) {
-  const av = avatarFor(installment.debtorUserId)
+  const av = avatarFor(installment.debtor.id)
   const { status } = installment
 
   const statusMap = {
@@ -550,7 +577,7 @@ function CreditorInstallmentCard({ installment, isOwn, onCharge, onConfirm, onRe
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
             }}>🧾</div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1A1A1F' }}>comprovante_pix.jpg</div>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1A1A1F' }}>Comprovante recebido</div>
               <div style={{ fontSize: 11, color: '#A88A4E' }}>Enviado por {installment.debtor.name}</div>
             </div>
           </div>

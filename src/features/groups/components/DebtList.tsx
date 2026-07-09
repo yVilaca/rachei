@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatCurrency, formatDate } from '../../../lib/utils'
-import type { Debt, Group } from '../../../types'
+import type { Debt } from '../../../types'
 
 interface DebtListProps {
   debts: Debt[]
-  group: Group
 }
 
 type Filter = 'all' | 'pending' | 'paid'
@@ -25,7 +24,7 @@ function getDebtEmoji(description: string): string {
   return '💸'
 }
 
-export default function DebtList({ debts, group }: DebtListProps) {
+export default function DebtList({ debts }: DebtListProps) {
   const [filter, setFilter] = useState<Filter>('all')
   const navigate = useNavigate()
 
@@ -73,8 +72,7 @@ export default function DebtList({ debts, group }: DebtListProps) {
           const pendingCount = debt.installments.filter((i) => i.status !== 'paid').length
           const totalCount = debt.installments.length
           const isFullyPaid = pendingCount === 0
-          const payer = group.members.find((m) => m.user?.id === debt.paidByUserId)
-          const payerName = payer?.user?.name.split(' ')[0] ?? 'Alguém'
+          const payerName = debt.paidBy.name.split(' ')[0]
           const iconBg = DEBT_ICON_COLORS[idx % DEBT_ICON_COLORS.length]
           const statusBg = isFullyPaid ? '#E9F9F0' : '#FFF0ED'
           const statusFg = isFullyPaid ? '#0E8F5C' : '#E0431F'

@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../../stores/auth.store'
-import { useAppStore } from '../../../stores/app.store'
 import { getInitials } from '../../../lib/utils'
 import { useToast } from '../../../hooks/useToast'
 import Toast from '../../../components/Toast'
 import { groupService } from '../../../services/group.service'
+import { debtService } from '../../../services/debt.service'
 import type { GroupDetail, SplitType } from '../../../types'
 
 interface DebtFormProps {
@@ -22,7 +22,7 @@ const fmt = (cents: number) =>
 export default function DebtForm({ groupId }: DebtFormProps) {
   const navigate = useNavigate()
   const currentUser = useAuthStore((s) => s.currentUser)
-  const { addDebt } = useAppStore()
+  const [submitting, setSubmitting] = useState(false)
 
   const [group, setGroup] = useState<GroupDetail | null>(null)
   const [loadError, setLoadError] = useState(false)
@@ -111,11 +111,11 @@ export default function DebtForm({ groupId }: DebtFormProps) {
     setCustomCents((prev) => ({ ...prev, [userId]: parseInt(digits, 10) }))
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setSubmitAttempted(true)
     setTouchedDesc(true)
     setTouchedAmount(true)
-    if (!canSubmit) { showToast(formError!); return }
+    if (!canSubmit || submitting) { showToast(formError!); return }
 
     const debtors = selectedDebtors.map((userId, idx) => ({
       userId,
@@ -124,8 +124,14 @@ export default function DebtForm({ groupId }: DebtFormProps) {
         : customCents[userId] ?? 0,
     }))
 
-    addDebt({ groupId, description, totalAmountCents: amountCents, paidByUserId, splitType, debtors })
-    navigate(`/grupos/${groupId}`)
+    setSubmitting(true)
+    try {
+      await debtService.createDebt({ groupId, description, totalAmountCents: amountCents, paidByUserId, splitType, debtors })
+      navigate(`/grupos/${groupId}`)
+    } catch {
+      showToast('Erro ao registrar dívida. Tente novamente.')
+      setSubmitting(false)
+    }
   }
 
   // ── loading / error ───────────────────────────────────────────────────────
@@ -423,14 +429,14 @@ export default function DebtForm({ groupId }: DebtFormProps) {
             width: '100%', textAlign: 'center', padding: 16,
             borderRadius: 16, fontWeight: 800, fontSize: 16,
             cursor: 'pointer', border: 'none',
-            background: canSubmit || !submitAttempted
+            background: submitting ? '#ECECF0' : canSubmit || !submitAttempted
               ? 'linear-gradient(135deg,#FF5436,#FF8A3D)'
               : '#ECECF0',
-            color: canSubmit || !submitAttempted ? '#fff' : '#6B6B76',
-            boxShadow: canSubmit || !submitAttempted ? '0 8px 18px rgba(255,84,54,.3)' : 'none',
+            color: submitting || (!canSubmit && submitAttempted) ? '#6B6B76' : '#fff',
+            boxShadow: submitting || (!canSubmit && submitAttempted) ? 'none' : '0 8px 18px rgba(255,84,54,.3)',
           }}
         >
-          Registrar dívida
+          {submitting ? 'Registrando...' : 'Registrar dívida'}
         </button>
       </div>
     </div>

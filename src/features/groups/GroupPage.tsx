@@ -1,22 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/auth.store'
-import { useAppStore } from '../../stores/app.store'
 import GroupHeader from './components/GroupHeader'
 import DebtList from './components/DebtList'
 import { groupService } from '../../services/group.service'
+import { debtService } from '../../services/debt.service'
 import { useToast } from '../../hooks/useToast'
 import Toast from '../../components/Toast'
-import type { GroupDetail } from '../../types'
+import type { Debt, GroupDetail } from '../../types'
 
 export default function GroupPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const currentUser = useAuthStore((s) => s.currentUser)
-  const { getDebtsByGroup } = useAppStore()
   const { message: toastMsg, show: showToast } = useToast()
 
   const [group, setGroup] = useState<GroupDetail | null>(null)
+  const [debts, setDebts] = useState<Debt[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -37,8 +37,11 @@ export default function GroupPage() {
       try {
         setLoading(true)
         setError(null)
-        const g = await groupService.getGroup(id!)
-        if (!cancelled) setGroup(g)
+        const [g, d] = await Promise.all([
+          groupService.getGroup(id!),
+          debtService.getDebtsByGroup(id!),
+        ])
+        if (!cancelled) { setGroup(g); setDebts(d) }
       } catch {
         if (!cancelled) setError('Grupo não encontrado ou sem acesso.')
       } finally {
@@ -49,16 +52,14 @@ export default function GroupPage() {
     return () => { cancelled = true }
   }, [id])
 
-  const debts = id ? getDebtsByGroup(id) : []
-
   const groupBalance = (() => {
-    if (!currentUser || !group) return 0
+    if (!currentUser) return 0
     let net = 0
     for (const debt of debts) {
       for (const inst of debt.installments) {
         if (inst.status === 'paid') continue
-        if (debt.paidByUserId === currentUser.id && inst.debtorUserId !== currentUser.id) net += inst.amountCents
-        if (inst.debtorUserId === currentUser.id && debt.paidByUserId !== currentUser.id) net -= inst.amountCents
+        if (debt.paidBy.id === currentUser.id && inst.debtor.id !== currentUser.id) net += inst.amountCents
+        if (inst.debtor.id === currentUser.id && debt.paidBy.id !== currentUser.id) net -= inst.amountCents
       }
     }
     return net
@@ -162,7 +163,7 @@ export default function GroupPage() {
   return (
     <div className="no-scrollbar min-h-dvh overflow-auto bg-[#F5F5F8] pb-28">
       <GroupHeader group={group} groupBalance={groupBalance} />
-      <DebtList debts={debts} group={group} />
+      <DebtList debts={debts} />
 
       <div style={{ padding: '12px 20px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
         <button

@@ -528,37 +528,17 @@ function CreditorInstallmentCard({ installment, isOwn, onCharge, onConfirm, onRe
       )}
 
       {status === 'awaiting_confirmation' && (
-        <div style={{ marginTop: 13 }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            background: '#FFF8EE', border: '1px solid #FCE6C0',
-            borderRadius: 12, padding: '10px 12px', marginBottom: 10,
-          }}>
-            <div style={{
-              width: 38, height: 46, borderRadius: 6, flexShrink: 0,
-              background: 'linear-gradient(135deg,#E8E8EE,#F4F4F8)',
-              border: '1px solid #DADAE2',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
-            }}>🧾</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1A1A1F' }}>
-                {installment.proof ? 'Comprovante recebido' : 'Pagamento declarado'}
-              </div>
-              <div style={{ fontSize: 11, color: '#A88A4E' }}>Por {installment.debtor.name}</div>
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={onReject} style={{
-              flex: 1, textAlign: 'center', padding: 11, borderRadius: 12,
-              fontWeight: 800, fontSize: 13.5, background: '#FFEDE8', color: '#E0431F',
-              border: 'none', cursor: 'pointer',
-            }}>Rejeitar</button>
-            <button onClick={onConfirm} style={{
-              flex: 2, textAlign: 'center', padding: 11, borderRadius: 12,
-              fontWeight: 800, fontSize: 13.5, background: '#11A36B', color: '#fff',
-              border: 'none', cursor: 'pointer',
-            }}>Confirmar recebimento</button>
-          </div>
+        <div style={{ marginTop: 13, display: 'flex', gap: 8 }}>
+          <button onClick={onReject} style={{
+            flex: 1, textAlign: 'center', padding: 11, borderRadius: 12,
+            fontWeight: 800, fontSize: 13.5, background: '#FFEDE8', color: '#E0431F',
+            border: 'none', cursor: 'pointer',
+          }}>Rejeitar</button>
+          <button onClick={onConfirm} style={{
+            flex: 2, textAlign: 'center', padding: 11, borderRadius: 12,
+            fontWeight: 800, fontSize: 13.5, background: '#11A36B', color: '#fff',
+            border: 'none', cursor: 'pointer',
+          }}>Confirmar recebimento</button>
         </div>
       )}
 

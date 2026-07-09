@@ -1,13 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/auth.store'
 import { formatCurrency, getInitials } from '../../lib/utils'
 import { avatarFor } from '../../lib/avatar'
 import { useToast } from '../../hooks/useToast'
 import Toast from '../../components/Toast'
-import { groupService } from '../../services/group.service'
+import { dashboardService, type BalanceEntry, type CreditItem, type DashboardData, type OwedItem } from '../../services/dashboard.service'
 import { debtService } from '../../services/debt.service'
-import type { Debt, GroupSummary, UserMin } from '../../types'
 
 const EMOJI_BG: Record<string, string> = {
   '🏖️': '#FFF0ED', '🏠': '#EDF4FF', '🍕': '#FFF8EC', '🎮': '#F0EDFF', '✈️': '#EDF4FF',
@@ -19,99 +18,16 @@ export default function DashboardPage() {
   const [debtTab, setDebtTab] = useState<0 | 1>(0)
   const { message: toastMsg, show: showToast } = useToast()
 
-  const [groups, setGroups] = useState<GroupSummary[]>([])
-  const [debts, setDebts] = useState<Debt[]>([])
+  const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
-    async function load() {
-      try {
-        const grps = await groupService.getGroups()
-        if (cancelled) return
-        setGroups(grps)
-        const allDebts = await Promise.all(grps.map((g) => debtService.getDebtsByGroup(g.id)))
-        if (!cancelled) setDebts(allDebts.flat())
-      } catch {}
-      finally { if (!cancelled) setLoading(false) }
-    }
-    load()
+    dashboardService.get()
+      .then((d) => { if (!cancelled) { setData(d); setLoading(false) } })
+      .catch(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
   }, [])
-
-  const { totalOwed, totalOwing, balanceEntries, myOwed, myCredit } = useMemo(() => {
-    if (!currentUser) return {
-      totalOwed: 0, totalOwing: 0,
-      balanceEntries: [] as BalanceEntry[],
-      myOwed: [] as OwedItem[],
-      myCredit: [] as CreditItem[],
-    }
-
-    const balanceMap = new Map<string, { user: UserMin; cents: number }>()
-    const myOwed: OwedItem[] = []
-    const myCredit: CreditItem[] = []
-
-    for (const debt of debts) {
-      const grpName = groups.find((g) => g.id === debt.groupId)?.name ?? ''
-
-      for (const inst of debt.installments) {
-        if (inst.status === 'paid') continue
-
-        if (debt.paidBy.id === currentUser.id && inst.debtor.id !== currentUser.id) {
-          const prev = balanceMap.get(inst.debtor.id)
-          balanceMap.set(inst.debtor.id, {
-            user: inst.debtor,
-            cents: (prev?.cents ?? 0) + inst.amountCents,
-          })
-          myCredit.push({
-            installmentId: inst.id,
-            debtId: debt.id,
-            description: debt.description,
-            groupName: grpName,
-            amountCents: inst.amountCents,
-            status: inst.status,
-            debtorName: inst.debtor.name,
-            debtorId: inst.debtor.id,
-          })
-        }
-
-        if (inst.debtor.id === currentUser.id && debt.paidBy.id !== currentUser.id) {
-          const prev = balanceMap.get(debt.paidBy.id)
-          balanceMap.set(debt.paidBy.id, {
-            user: debt.paidBy,
-            cents: (prev?.cents ?? 0) - inst.amountCents,
-          })
-          myOwed.push({
-            installmentId: inst.id,
-            debtId: debt.id,
-            description: debt.description,
-            groupName: grpName,
-            amountCents: inst.amountCents,
-            status: inst.status,
-            creditorName: debt.paidBy.name,
-            creditorId: debt.paidBy.id,
-          })
-        }
-      }
-    }
-
-    let totalOwed = 0
-    let totalOwing = 0
-    const balanceEntries: BalanceEntry[] = []
-
-    for (const { user, cents } of balanceMap.values()) {
-      if (cents > 0) totalOwed += cents
-      else totalOwing += Math.abs(cents)
-      balanceEntries.push({ user, balanceCents: cents })
-    }
-
-    return {
-      totalOwed, totalOwing,
-      balanceEntries: balanceEntries.sort((a, b) => b.balanceCents - a.balanceCents),
-      myOwed: myOwed.sort((a, b) => b.amountCents - a.amountCents),
-      myCredit: myCredit.sort((a, b) => b.amountCents - a.amountCents),
-    }
-  }, [currentUser, debts, groups])
 
   const handleCharge = async (installmentId: string) => {
     try {
@@ -126,7 +42,9 @@ export default function DashboardPage() {
 
   if (!currentUser) return null
 
-  const net = totalOwed - totalOwing
+  const totalAReceber = data?.totalAReceber ?? 0
+  const totalAPagar = data?.totalAPagar ?? 0
+  const net = totalAReceber - totalAPagar
   const netText = (net >= 0 ? '+' : '') + formatCurrency(net)
   const netSub = net > 0
     ? 'Te devem mais do que você deve'
@@ -134,8 +52,10 @@ export default function DashboardPage() {
     ? 'Você deve mais do que te devem'
     : 'Tudo quitado!'
 
-  const activeList = debtTab === 0 ? myCredit : myOwed
-  const totalItems = myOwed.length + myCredit.length
+  const aReceber = data?.aReceber ?? []
+  const aPagar = data?.aPagar ?? []
+  const activeList = debtTab === 0 ? aReceber : aPagar
+  const totalItems = aReceber.length + aPagar.length
 
   return (
     <div
@@ -174,7 +94,7 @@ export default function DashboardPage() {
           <div style={{ position: 'absolute', right: -34, top: -34, width: 150, height: 150, borderRadius: '50%', background: 'rgba(255,255,255,.12)' }} />
           <div style={{ position: 'absolute', right: 30, bottom: -50, width: 90, height: 90, borderRadius: '50%', background: 'rgba(255,255,255,.08)' }} />
           {loading ? (
-            <div style={{ height: 80, opacity: .5 }} />
+            <div style={{ height: 72, opacity: .4 }} />
           ) : (
             <>
               <div style={{ fontSize: 12.5, opacity: .92, fontWeight: 600, position: 'relative' }}>Saldo geral consolidado</div>
@@ -188,13 +108,13 @@ export default function DashboardPage() {
             <div style={{ flex: 1, background: 'rgba(255,255,255,.18)', borderRadius: 15, padding: '11px 13px' }}>
               <div style={{ fontSize: 10.5, opacity: .9, fontWeight: 700 }}>↗ TE DEVEM</div>
               <div style={{ fontWeight: 800, fontSize: 16, marginTop: 3, whiteSpace: 'nowrap' }}>
-                {loading ? '—' : formatCurrency(totalOwed)}
+                {loading ? '—' : formatCurrency(totalAReceber)}
               </div>
             </div>
             <div style={{ flex: 1, background: 'rgba(0,0,0,.16)', borderRadius: 15, padding: '11px 13px' }}>
               <div style={{ fontSize: 10.5, opacity: .9, fontWeight: 700 }}>↙ VOCÊ DEVE</div>
               <div style={{ fontWeight: 800, fontSize: 16, marginTop: 3, whiteSpace: 'nowrap' }}>
-                {loading ? '—' : formatCurrency(totalOwing)}
+                {loading ? '—' : formatCurrency(totalAPagar)}
               </div>
             </div>
           </div>
@@ -214,7 +134,7 @@ export default function DashboardPage() {
 
           <div style={{ display: 'flex', background: '#EBEBEF', borderRadius: 14, padding: 4, marginBottom: 12 }}>
             {(['Me devem', 'Preciso pagar'] as const).map((label, idx) => {
-              const count = idx === 0 ? myCredit.length : myOwed.length
+              const count = idx === 0 ? aReceber.length : aPagar.length
               const active = debtTab === idx
               return (
                 <button key={label} type="button"
@@ -269,20 +189,20 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {!loading && balanceEntries.length > 0 && (
+      {!loading && (data?.saldoPorPessoa ?? []).length > 0 && (
         <div style={{ padding: '24px 20px 0' }}>
           <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 700, fontSize: 16, color: '#15151A', marginBottom: 12 }}>
             Por amigo
           </div>
           <div style={{ background: '#fff', borderRadius: 22, padding: 4, boxShadow: '0 2px 12px rgba(0,0,0,.04)' }}>
-            {balanceEntries.map((entry, i) => {
-              const av = avatarFor(entry.user.id)
+            {(data?.saldoPorPessoa ?? []).map((entry: BalanceEntry, i, arr) => {
+              const av = avatarFor(entry.userId)
               const isPos = entry.balanceCents > 0
               return (
-                <div key={entry.user.id} style={{
+                <div key={entry.userId} style={{
                   display: 'flex', alignItems: 'center', gap: 12,
                   padding: '12px 14px',
-                  borderBottom: i < balanceEntries.length - 1 ? '1px solid #F0F0F3' : 'none',
+                  borderBottom: i < arr.length - 1 ? '1px solid #F0F0F3' : 'none',
                 }}>
                   <div style={{
                     width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
@@ -290,10 +210,10 @@ export default function DashboardPage() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontWeight: 800, fontSize: 13,
                   }}>
-                    {getInitials(entry.user.name)}
+                    {getInitials(entry.userName)}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: 14.5, color: '#1A1A1F' }}>{entry.user.name}</div>
+                    <div style={{ fontWeight: 700, fontSize: 14.5, color: '#1A1A1F' }}>{entry.userName}</div>
                     <div style={{ fontSize: 11.5, color: '#6B6B76' }}>{isPos ? 'te deve' : 'você deve'}</div>
                   </div>
                   <div style={{ fontWeight: 800, fontSize: 14.5, color: isPos ? '#0E8F5C' : '#FF5436', whiteSpace: 'nowrap' }}>
@@ -321,12 +241,12 @@ export default function DashboardPage() {
           </button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {!loading && groups.length === 0 && (
+          {!loading && (data?.grupos ?? []).length === 0 && (
             <div style={{ textAlign: 'center', color: '#6B6B76', fontSize: 13, padding: '12px 0' }}>
               Nenhum grupo ainda.
             </div>
           )}
-          {groups.map((group) => {
+          {(data?.grupos ?? []).map((group) => {
             const iconBg = group.emoji ? (EMOJI_BG[group.emoji] ?? '#FFF0ED') : '#F0F0F4'
             return (
               <button key={group.id} onClick={() => navigate(`/grupos/${group.id}`)}
@@ -357,35 +277,6 @@ export default function DashboardPage() {
       </div>
     </div>
   )
-}
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-interface BalanceEntry {
-  user: UserMin
-  balanceCents: number
-}
-
-interface OwedItem {
-  installmentId: string
-  debtId: string
-  description: string
-  groupName: string
-  amountCents: number
-  status: string
-  creditorName: string
-  creditorId: string
-}
-
-interface CreditItem {
-  installmentId: string
-  debtId: string
-  description: string
-  groupName: string
-  amountCents: number
-  status: string
-  debtorName: string
-  debtorId: string
 }
 
 // ── OwedCard ──────────────────────────────────────────────────────────────────
@@ -420,7 +311,6 @@ function OwedCard({ item, onOpen }: { item: OwedItem; onOpen: () => void }) {
           </div>
         </div>
       </div>
-
       <button onClick={onOpen} style={{
         marginTop: 12, width: '100%', padding: '10px',
         borderRadius: 11, fontWeight: 800, fontSize: 13.5,
@@ -466,7 +356,6 @@ function CreditCard({ item, onCharge, onOpen }: { item: CreditItem; onCharge: ()
           </div>
         </div>
       </div>
-
       <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
         {isAwaiting ? (
           <button onClick={onOpen} style={{

@@ -80,7 +80,6 @@ export interface NewDebtInput {
   groupId: string
   description: string
   totalAmountCents: number
-  paidByUserId: string
   splitType: SplitType
   debtors: { userId: string; amountCents: number }[]
 }

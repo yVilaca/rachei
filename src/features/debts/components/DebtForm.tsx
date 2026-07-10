@@ -41,7 +41,8 @@ export default function DebtForm({ groupId }: DebtFormProps) {
   // ── state ────────────────────────────────────────────────────────────────
   const [amountCents, setAmountCents] = useState(0)
   const [description, setDescription] = useState('')
-  const [paidByUserId, setPaidByUserId] = useState(currentUser?.id ?? '')
+  // Credor é sempre o usuário logado — quem registra bancou a conta e confirmará os pagamentos
+  const paidByUserId = currentUser?.id ?? ''
   const [selectedDebtors, setSelectedDebtors] = useState<string[]>([])
   const [splitType, setSplitType] = useState<SplitType>('equal')
   const [customCents, setCustomCents] = useState<Record<string, number>>({})
@@ -126,7 +127,7 @@ export default function DebtForm({ groupId }: DebtFormProps) {
 
     setSubmitting(true)
     try {
-      await debtService.createDebt({ groupId, description, totalAmountCents: amountCents, paidByUserId, splitType, debtors })
+      await debtService.createDebt({ groupId, description, totalAmountCents: amountCents, splitType, debtors })
       navigate(`/grupos/${groupId}`)
     } catch {
       showToast('Erro ao registrar dívida. Tente novamente.')
@@ -221,38 +222,24 @@ export default function DebtForm({ groupId }: DebtFormProps) {
         )}
       </div>
 
-      {/* QUEM PAGOU */}
+      {/* QUEM PAGOU — sempre o usuário logado (credor) */}
       <div style={{ marginTop: 22 }}>
         <div style={LABEL}>QUEM PAGOU (CREDOR)</div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
-          {activeMembers.map((m) => {
-            const userId = m.user!.id
-            const name = m.user!.name
-            const active = paidByUserId === userId
-            return (
-              <button key={userId} type="button" onClick={() => setPaidByUserId(userId)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 7,
-                  padding: '8px 13px 8px 8px', borderRadius: 999,
-                  fontWeight: 700, fontSize: 13, cursor: 'pointer',
-                  background: active ? '#FFF0ED' : '#fff',
-                  color: active ? '#FF5436' : '#3A3A42',
-                  border: `1.5px solid ${active ? '#FF5436' : '#ECECF0'}`,
-                }}
-              >
-                <div style={{
-                  width: 26, height: 26, borderRadius: '50%',
-                  background: active ? '#FF5436' : '#F0F0F4',
-                  color: active ? '#fff' : '#6B6B76',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontWeight: 800, fontSize: 10,
-                }}>
-                  {getInitials(name)}
-                </div>
-                {name.split(' ')[0]}
-              </button>
-            )
-          })}
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          padding: '8px 14px 8px 8px', borderRadius: 999,
+          fontWeight: 700, fontSize: 13,
+          background: '#FFF0ED', color: '#FF5436', border: '1.5px solid #FF5436',
+        }}>
+          <div style={{
+            width: 26, height: 26, borderRadius: '50%',
+            background: '#FF5436', color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontWeight: 800, fontSize: 10,
+          }}>
+            {getInitials(currentUser?.name ?? '')}
+          </div>
+          Você
         </div>
       </div>
 

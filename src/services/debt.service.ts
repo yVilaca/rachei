@@ -84,7 +84,6 @@ export const debtService = {
       grupo_id: input.groupId,
       description: input.description,
       total_amount_cents: input.totalAmountCents,
-      paid_by_id: Number(input.paidByUserId),
       split_type: input.splitType,
       parcelas: input.debtors.map((d) => ({
         debtor_id: Number(d.userId),

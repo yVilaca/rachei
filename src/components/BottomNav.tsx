@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useAppStore } from '../stores/app.store'
 import { useAuthStore } from '../stores/auth.store'
 import { groupService } from '../services/group.service'
+import { activityService } from '../services/activity.service'
 import type { GroupSummary } from '../types'
 
 const CORAL = '#FF5436'
@@ -16,23 +16,23 @@ const EMOJI_BG: Record<string, string> = {
 export default function BottomNav() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const { debts, readEventIds } = useAppStore()
   const currentUser = useAuthStore((s) => s.currentUser)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [groups, setGroups] = useState<GroupSummary[]>([])
   const [loadingGroups, setLoadingGroups] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
 
-  // Dot: any actionable event not yet read
-  const hasUnread = currentUser != null && debts.some((debt) => {
-    const isCred = debt.paidByUserId === currentUser.id
-    return debt.installments.some((inst) => {
-      if (inst.status === 'awaiting_confirmation' && isCred)
-        return !readEventIds.has(`ev-proof-${inst.id}`)
-      if (inst.status === 'pending' && inst.debtorUserId === currentUser.id && !isCred)
-        return !readEventIds.has(`ev-pending-${inst.id}`)
-      return false
-    })
-  })
+  // Badge de não-lidas vindo do backend; re-checa ao trocar de rota
+  useEffect(() => {
+    if (!currentUser) { setUnreadCount(0); return }
+    let cancelled = false
+    activityService.getUnreadCount()
+      .then((n) => { if (!cancelled) setUnreadCount(n) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [pathname, currentUser])
+
+  const hasUnread = unreadCount > 0
 
   const isHome = pathname === '/dashboard'
   const isGroups = pathname === '/grupos' || pathname.startsWith('/grupos/')

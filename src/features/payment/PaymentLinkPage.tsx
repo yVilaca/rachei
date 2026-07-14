@@ -1,120 +1,67 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../../stores/auth.store'
-import { useAppStore } from '../../stores/app.store'
-import { formatCurrency, formatDate, getInitials } from '../../lib/utils'
+import { formatCurrency, getInitials } from '../../lib/utils'
 import { avatarFor } from '../../lib/avatar'
-import ProofUpload from './components/ProofUpload'
-import QuickRegisterForm from './components/QuickRegisterForm'
+import { paymentService, type PublicCharge } from '../../services/payment.service'
+
+function CenteredCard({ emoji, title, subtitle, tone = '#FF5436' }: { emoji: string; title: string; subtitle: string; tone?: string }) {
+  return (
+    <div style={{
+      display: 'flex', minHeight: '100dvh', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      padding: '0 24px', textAlign: 'center', fontFamily: '"Plus Jakarta Sans", sans-serif',
+    }}>
+      <div style={{
+        width: 64, height: 64, borderRadius: 20, marginBottom: 16,
+        background: tone, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 30, color: '#fff',
+      }}>{emoji}</div>
+      <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 22, color: '#15151A' }}>{title}</div>
+      <div style={{ fontSize: 13.5, color: '#6B6B76', marginTop: 8, maxWidth: 300, lineHeight: 1.5 }}>{subtitle}</div>
+    </div>
+  )
+}
 
 export default function PaymentLinkPage() {
   const { token } = useParams<{ token: string }>()
   const navigate = useNavigate()
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
-  const { debts, groups, updateInstallmentStatus } = useAppStore()
-  const [showRegister, setShowRegister] = useState(false)
-  const [proofFile, setProofFile] = useState<File | null>(null)
-  const [submitted, setSubmitted] = useState(false)
+  const [charge, setCharge] = useState<PublicCharge | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
 
-  const installment = debts
-    .flatMap((d) => d.installments)
-    .find((i) => i.chargeLink?.token === token)
+  useEffect(() => {
+    if (!token) return
+    let cancelled = false
+    paymentService.getCharge(token)
+      .then((c) => { if (!cancelled) { setCharge(c); setLoading(false) } })
+      .catch(() => { if (!cancelled) { setNotFound(true); setLoading(false) } })
+    return () => { cancelled = true }
+  }, [token])
 
-  const debt = debts.find((d) => d.installments.some((i) => i.chargeLink?.token === token))
+  if (loading) {
+    return <CenteredCard emoji="R" title="Carregando..." subtitle="Buscando os dados da cobrança." />
+  }
 
-  if (!installment || !debt) {
+  if (notFound || !charge) {
     return (
-      <div style={{
-        display: 'flex', minHeight: '100dvh', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-        padding: '0 24px', textAlign: 'center',
-        fontFamily: '"Plus Jakarta Sans", sans-serif',
-      }}>
-        <div style={{
-          width: 64, height: 64, borderRadius: 20, marginBottom: 16,
-          background: 'linear-gradient(135deg,#FF5436,#FF9A3D)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 28, color: '#fff',
-        }}>
-          R
-        </div>
-        <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 22, color: '#15151A' }}>
-          Link inválido ou expirado
-        </div>
-        <div style={{ fontSize: 13.5, color: '#6B6B76', marginTop: 8 }}>
-          Este link de cobrança não existe ou já expirou.
-        </div>
-      </div>
+      <CenteredCard
+        emoji="R"
+        title="Link inválido ou expirado"
+        subtitle="Este link de cobrança não existe ou já expirou."
+      />
     )
   }
 
-  const isExpired = new Date(installment.chargeLink!.expiresAt) < new Date()
-  const { status } = installment
-  const isPending = status === 'pending'
-  const isAwaiting = status === 'awaiting_confirmation'
-  const isPaid = status === 'paid'
-
-  const allMembers = groups.flatMap((g) => g.members)
-  const creditorUser = allMembers.find((m) => m.userId === debt.paidByUserId)?.user
-  const creditorName = creditorUser?.name ?? debt.paidByUserId
-  const creditorAvatar = avatarFor(debt.paidByUserId)
-
-  const doConfirm = () => {
-    if (!proofFile) return
-    updateInstallmentStatus(installment.id, 'awaiting_confirmation', URL.createObjectURL(proofFile))
-    setSubmitted(true)
-  }
-
-  const handleConfirmPayment = () => {
-    if (!proofFile) return
-    if (!isAuthenticated) {
-      setShowRegister(true)
-      return
-    }
-    doConfirm()
-  }
-
-  if (submitted) {
-    return (
-      <div style={{
-        display: 'flex', minHeight: '100dvh', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-        padding: '0 24px', textAlign: 'center',
-        fontFamily: '"Plus Jakarta Sans", sans-serif',
-      }}>
-        <div style={{
-          width: 64, height: 64, borderRadius: '50%', background: '#E9F9F0',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 30, marginBottom: 16,
-        }}>✓</div>
-        <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 22, color: '#0E8F5C' }}>
-          Comprovante enviado!
-        </div>
-        <div style={{ fontSize: 13.5, color: '#6B6B76', marginTop: 8, maxWidth: 280, lineHeight: 1.5 }}>
-          Aguardando confirmação de quem pagou. Você será notificado quando confirmado.
-        </div>
-      </div>
-    )
-  }
+  const isPaid = charge.status === 'paid'
+  const isAwaiting = charge.status === 'awaiting_confirmation'
+  const isPending = charge.status === 'pending'
+  const av = avatarFor(charge.creditorName)
 
   return (
-    <div style={{
-      minHeight: '100dvh', background: '#F5F5F8', paddingBottom: 40,
-      fontFamily: '"Plus Jakarta Sans", sans-serif',
-    }}>
+    <div style={{ minHeight: '100dvh', background: '#F5F5F8', paddingBottom: 40, fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
       {/* Header */}
       <div style={{ background: '#fff', padding: '52px 20px 18px', borderBottom: '1px solid #EEEEF2' }}>
-        <button onClick={() => navigate(-1)} style={{
-          display: 'inline-flex', alignItems: 'center', gap: 5,
-          fontWeight: 700, fontSize: 14, color: '#6B6B76', background: 'none',
-          border: 'none', cursor: 'pointer', marginBottom: 14,
-        }}>
-          <svg width="9" height="15" viewBox="0 0 9 15" fill="none">
-            <path d="M7.5 1L1.5 7.5l6 6.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          Voltar
-        </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
           <div style={{
             width: 32, height: 32, borderRadius: 10,
             background: 'linear-gradient(135deg,#FF5436,#FF8A3D)',
@@ -124,7 +71,7 @@ export default function PaymentLinkPage() {
           <span style={{ fontSize: 12.5, fontWeight: 700, color: '#6B6B76' }}>Rachei · Link seguro</span>
         </div>
         <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 20, color: '#15151A', letterSpacing: '-.01em' }}>
-          {debt.description}
+          {charge.description}
         </div>
       </div>
 
@@ -138,7 +85,7 @@ export default function PaymentLinkPage() {
           marginBottom: 14,
         }}>
           <div style={{ fontSize: 13, color: '#6B6B76', fontWeight: 600, marginBottom: 6 }}>
-            {isPaid ? 'Você pagou' : 'Sua parte'}
+            {isPaid ? 'Pago' : 'Sua parte'}
           </div>
           <div style={{
             fontFamily: '"Bricolage Grotesque"', fontWeight: 800,
@@ -146,24 +93,20 @@ export default function PaymentLinkPage() {
             color: isPaid ? '#0E8F5C' : '#FF5436',
             lineHeight: 1.05, marginBottom: 16,
           }}>
-            {formatCurrency(installment.amountCents)}
+            {formatCurrency(charge.amountCents)}
           </div>
-
-          {/* Credor */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{
               width: 36, height: 36, borderRadius: '50%',
-              background: creditorAvatar.bg, color: creditorAvatar.fg,
+              background: av.bg, color: av.fg,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontWeight: 800, fontSize: 12, flexShrink: 0,
             }}>
-              {getInitials(creditorName)}
+              {getInitials(charge.creditorName)}
             </div>
             <div>
               <div style={{ fontSize: 11, color: '#6B6B76', fontWeight: 600 }}>Cobrado por</div>
-              <div style={{ fontSize: 14.5, fontWeight: 700, color: '#1A1A1F' }}>
-                {creditorName}
-              </div>
+              <div style={{ fontSize: 14.5, fontWeight: 700, color: '#1A1A1F' }}>{charge.creditorName}</div>
             </div>
             <div style={{ marginLeft: 'auto' }}>
               <span style={{
@@ -177,68 +120,28 @@ export default function PaymentLinkPage() {
           </div>
         </div>
 
-        {/* Detalhes da dívida */}
-        <div style={{
-          background: '#fff', borderRadius: 18, padding: 18,
-          boxShadow: '0 2px 10px rgba(0,0,0,.04)', marginBottom: 14,
-        }}>
-          <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 700, fontSize: 14, color: '#15151A', marginBottom: 14 }}>
-            Detalhes
-          </div>
-          {([
-            ['Criado em', formatDate(debt.createdAt)],
-            ['Total da despesa', formatCurrency(debt.totalAmountCents)],
-            ['Sua parte', formatCurrency(installment.amountCents)],
-            ...(isExpired ? [['Status do link', 'Expirado']] : []),
-          ] as [string, string][]).map(([label, value], i, arr) => (
-            <div key={label} style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              paddingBottom: i < arr.length - 1 ? 11 : 0,
-              marginBottom: i < arr.length - 1 ? 11 : 0,
-              borderBottom: i < arr.length - 1 ? '1px solid #F0F0F4' : 'none',
-            }}>
-              <span style={{ fontSize: 13.5, color: '#6B6B76' }}>{label}</span>
-              <span style={{
-                fontSize: 13.5, fontWeight: 700,
-                color: label === 'Status do link' ? '#E0431F' : '#1A1A1F',
-              }}>{value}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Upload + CTA */}
-        {!isExpired && isPending && (
+        {/* Ação: confirmar pagamento acontece dentro do app autenticado */}
+        {isPending && !charge.expired && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ background: '#fff', borderRadius: 18, padding: 18, boxShadow: '0 2px 10px rgba(0,0,0,.04)' }}>
-              <div style={{ fontSize: 11.5, fontWeight: 800, color: '#6B6B76', letterSpacing: '.05em', marginBottom: 12 }}>
-                ANEXAR COMPROVANTE
-              </div>
-              <ProofUpload onUpload={setProofFile} />
+            <div style={{
+              background: '#fff', borderRadius: 18, padding: 18,
+              boxShadow: '0 2px 10px rgba(0,0,0,.04)',
+              fontSize: 13.5, color: '#3A3A42', lineHeight: 1.5,
+            }}>
+              Para confirmar que já pagou, abra o Rachei e declare o pagamento na sua
+              lista de dívidas. Quem cobrou revisa o comprovante antes de quitar (confirmação dupla).
             </div>
-
-            {showRegister ? (
-              <QuickRegisterForm onComplete={doConfirm} />
-            ) : (
-              <button
-                disabled={!proofFile}
-                onClick={handleConfirmPayment}
-                style={{
-                  width: '100%', padding: 16, borderRadius: 16,
-                  fontWeight: 800, fontSize: 16, border: 'none',
-                  cursor: proofFile ? 'pointer' : 'not-allowed',
-                  background: proofFile ? 'linear-gradient(135deg,#FF5436,#FF8A3D)' : '#EBEBEF',
-                  color: proofFile ? '#fff' : '#6B6B76',
-                  boxShadow: proofFile ? '0 8px 18px rgba(255,84,54,.3)' : 'none',
-                  transition: 'background .2s, box-shadow .2s',
-                }}
-              >
-                Marcar como pago
-              </button>
-            )}
-
-            <div style={{ textAlign: 'center', fontSize: 11.5, color: '#6B6B76', lineHeight: 1.5 }}>
-              Confirmação dupla: quem cobrou revisa o comprovante antes de quitar a dívida.
-            </div>
+            <button
+              onClick={() => navigate('/login')}
+              style={{
+                width: '100%', padding: 16, borderRadius: 16,
+                fontWeight: 800, fontSize: 16, border: 'none', cursor: 'pointer',
+                background: 'linear-gradient(135deg,#FF5436,#FF8A3D)', color: '#fff',
+                boxShadow: '0 8px 18px rgba(255,84,54,.3)',
+              }}
+            >
+              Abrir o Rachei para pagar
+            </button>
           </div>
         )}
 
@@ -250,9 +153,9 @@ export default function PaymentLinkPage() {
           }}>
             <span style={{ fontSize: 22, lineHeight: 1 }}>⏳</span>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#1A1A1F' }}>Comprovante enviado</div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#1A1A1F' }}>Pagamento em análise</div>
               <div style={{ fontSize: 12.5, color: '#A88A4E', marginTop: 3 }}>
-                Aguardando confirmação. Você será notificado assim que confirmado.
+                Aguardando {charge.creditorName} confirmar o recebimento.
               </div>
             </div>
           </div>
@@ -267,21 +170,19 @@ export default function PaymentLinkPage() {
             <span style={{ fontSize: 22, lineHeight: 1 }}>✅</span>
             <div>
               <div style={{ fontWeight: 700, fontSize: 14, color: '#0E8F5C' }}>Pagamento confirmado!</div>
-              <div style={{ fontSize: 12.5, color: '#3BA877', marginTop: 3 }}>
-                Sua dívida está quitada.
-              </div>
+              <div style={{ fontSize: 12.5, color: '#3BA877', marginTop: 3 }}>Esta dívida está quitada.</div>
             </div>
           </div>
         )}
 
-        {isExpired && isPending && (
+        {charge.expired && isPending && (
           <div style={{
             background: '#FFF0ED', border: '1px solid #FFD6CC',
             borderRadius: 16, padding: '16px 18px', textAlign: 'center',
           }}>
             <div style={{ fontWeight: 700, fontSize: 14, color: '#E0431F' }}>Link expirado</div>
             <div style={{ fontSize: 12.5, color: '#B05040', marginTop: 3 }}>
-              Solicite um novo link de cobrança ao credor.
+              Solicite um novo link de cobrança a quem te cobrou.
             </div>
           </div>
         )}

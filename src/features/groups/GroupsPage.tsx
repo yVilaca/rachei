@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/auth.store'
-import { useAppStore } from '../../stores/app.store'
 import { formatCurrency } from '../../lib/utils'
 import { useToast } from '../../hooks/useToast'
 import Toast from '../../components/Toast'
 import { groupService, type PendingGroup } from '../../services/group.service'
+import { debtService } from '../../services/debt.service'
 import type { GroupSummary } from '../../types'
 
 const EMOJI_BG: Record<string, string> = {
@@ -21,11 +21,11 @@ const EMOJI_OPTIONS = ['👥', '🏖️', '🏠', '🍕', '🎮', '✈️', '�
 export default function GroupsPage() {
   const navigate = useNavigate()
   const currentUser = useAuthStore((s) => s.currentUser)
-  const { debts } = useAppStore()
   const { message: toastMsg, show: showToast } = useToast()
 
   const [groups, setGroups] = useState<GroupSummary[]>([])
   const [pendingGroups, setPendingGroups] = useState<PendingGroup[]>([])
+  const [balances, setBalances] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -53,6 +53,28 @@ export default function GroupsPage() {
           setGroups(gs)
           setPendingGroups(pg)
         }
+
+        // Saldo por grupo a partir das dívidas reais (mesma regra do GroupPage)
+        if (currentUser) {
+          const perGroup = await Promise.all(
+            gs.map((g) => debtService.getDebtsByGroup(g.id).catch(() => [])),
+          )
+          if (!cancelled) {
+            const map: Record<string, number> = {}
+            gs.forEach((g, i) => {
+              let net = 0
+              for (const debt of perGroup[i]) {
+                for (const inst of debt.installments) {
+                  if (inst.status === 'paid') continue
+                  if (debt.paidBy.id === currentUser.id && inst.debtor.id !== currentUser.id) net += inst.amountCents
+                  if (inst.debtor.id === currentUser.id && debt.paidBy.id !== currentUser.id) net -= inst.amountCents
+                }
+              }
+              map[g.id] = net
+            })
+            setBalances(map)
+          }
+        }
       } catch {
         if (!cancelled) setError('Erro ao carregar grupos. Tente novamente.')
       } finally {
@@ -61,25 +83,7 @@ export default function GroupsPage() {
     }
     load()
     return () => { cancelled = true }
-  }, [])
-
-  const groupBalances = (() => {
-    if (!currentUser) return {} as Record<string, number>
-    const map: Record<string, number> = {}
-    for (const group of groups) {
-      let net = 0
-      const groupDebts = debts.filter((d) => d.groupId === group.id)
-      for (const debt of groupDebts) {
-        for (const inst of debt.installments) {
-          if (inst.status === 'paid') continue
-          if (debt.paidByUserId === currentUser.id && inst.debtorUserId !== currentUser.id) net += inst.amountCents
-          if (inst.debtorUserId === currentUser.id && debt.paidByUserId !== currentUser.id) net -= inst.amountCents
-        }
-      }
-      map[group.id] = net
-    }
-    return map
-  })()
+  }, [currentUser])
 
   async function handleCreate() {
     const name = newGroupName.trim()
@@ -207,7 +211,7 @@ export default function GroupsPage() {
             </p>
           )}
           {groups.map((group) => {
-            const balance = groupBalances[group.id] ?? 0
+            const balance = balances[group.id] ?? 0
             const balanceColor = balance >= 0 ? '#11A36B' : '#FF5436'
             const balanceText = balance === 0 ? 'R$ 0,00' : formatCurrency(Math.abs(balance))
             const iconBg = group.emoji ? (EMOJI_BG[group.emoji] ?? '#FFF0ED') : '#F0F0F4'

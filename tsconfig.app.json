@@ -23,12 +23,11 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
 
-    /* Path aliases */
-    "ignoreDeprecations": "5.0",
-    "baseUrl": ".",
+    /* Path aliases (paths resolve relativos ao tsconfig; baseUrl é deprecado) */
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/test"]
 }

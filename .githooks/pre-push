@@ -1,0 +1,13 @@
+#!/bin/sh
+# Trava local: barra o push se o typecheck ou os testes falharem.
+# Ativar (uma vez): git config core.hooksPath .githooks
+# Emergência (pular): git push --no-verify
+set -e
+
+echo "pre-push: typecheck (tsc)..."
+npx tsc -b
+
+echo "pre-push: testes (vitest)..."
+npm run test:run
+
+echo "pre-push: OK — push liberado."

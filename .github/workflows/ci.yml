@@ -13,23 +13,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # pnpm é o gerenciador do projeto (versão fixada em package.json > packageManager)
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
+          cache: 'pnpm'
 
-      # .npmrc fixa legacy-peer-deps (conflito eslint10 x jsx-a11y) — install reprodutível
       - name: Instalar dependências
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       # Lint ainda tem dívida pré-existente — reporta mas não bloqueia (ratchet).
       - name: Lint (não-bloqueante)
-        run: npm run lint
+        run: pnpm run lint
         continue-on-error: true
 
       # Gates rígidos: o build inclui o typecheck (tsc -b) e falha o deploy se quebrar.
       - name: Typecheck + build
-        run: npm run build
+        run: pnpm run build
 
       - name: Testes (Vitest)
-        run: npm run test:run
+        run: pnpm run test:run

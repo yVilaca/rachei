@@ -5,9 +5,9 @@
 set -e
 
 echo "pre-push: typecheck (tsc)..."
-npx tsc -b
+pnpm exec tsc -b
 
 echo "pre-push: testes (vitest)..."
-npm run test:run
+pnpm run test:run
 
 echo "pre-push: OK — push liberado."

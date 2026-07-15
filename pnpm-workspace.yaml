@@ -1,6 +1,8 @@
 # Scripts de instalação permitidos (pnpm bloqueia por padrão — supply-chain).
 # esbuild: baixa o binário nativo (necessário p/ Vite e Vitest).
 # msw: gera o service worker de mock.
+# @sentry/cli: baixa o binário usado para upload de source maps (build/CI).
 allowBuilds:
+  '@sentry/cli': true
   esbuild: true
   msw: true

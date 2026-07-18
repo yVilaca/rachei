@@ -10,6 +10,7 @@ import DashboardPage from '../features/dashboard/DashboardPage'
 import GroupPage from '../features/groups/GroupPage'
 import GroupsPage from '../features/groups/GroupsPage'
 import NewDebtPage from '../features/debts/NewDebtPage'
+import EditDebtPage from '../features/debts/EditDebtPage'
 import DebtDetailPage from '../features/debts/DebtDetailPage'
 import PaymentLinkPage from '../features/payment/PaymentLinkPage'
 import ProfilePage from '../features/profile/ProfilePage'
@@ -39,6 +40,7 @@ export const router = createBrowserRouter([
       },
       // Pages without bottom nav
       { path: '/grupos/:id/nova-divida', element: <PrivateRoute><NewDebtPage /></PrivateRoute> },
+      { path: '/dividas/:id/editar', element: <PrivateRoute><EditDebtPage /></PrivateRoute> },
       { path: '/dividas/:id', element: <PrivateRoute><DebtDetailPage /></PrivateRoute> },
       { path: '/pagar/:token', element: <PaymentLinkPage /> },
       { path: '*', element: <NotFoundPage /> },

@@ -65,6 +65,20 @@ export default function DebtDetailPage() {
 function CreditorView({ debt, currentUser, onRefresh }: { debt: Debt; currentUser: { id: string; name: string }; onRefresh: () => void }) {
   const navigate = useNavigate()
   const { message: toastMsg, show: showToast } = useToast()
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDelete = async () => {
+    setDeleting(true)
+    try {
+      await debtService.deleteDebt(debt.id)
+      navigate(`/grupos/${debt.groupId}`)
+    } catch {
+      setDeleting(false)
+      setConfirmDelete(false)
+      showToast('Não foi possível excluir. Tente novamente.')
+    }
+  }
 
   const creditorName = debt.paidBy.id === currentUser.id ? 'Você' : debt.paidBy.name
   const splitLabel = debt.splitType === 'equal' ? 'Igualitária' : 'Personalizada'
@@ -103,16 +117,47 @@ function CreditorView({ debt, currentUser, onRefresh }: { debt: Debt; currentUse
     <div style={{ minHeight: '100dvh', background: '#F5F5F8', fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
       <Toast message={toastMsg} />
       <div style={{ background: 'linear-gradient(150deg,#FF5436,#FF8A3D)', padding: '52px 20px 26px', color: '#fff' }}>
-        <button onClick={() => navigate(-1)} style={{
-          display: 'inline-flex', alignItems: 'center', gap: 5,
-          fontWeight: 700, fontSize: 14, color: '#fff', background: 'none',
-          border: 'none', cursor: 'pointer', marginBottom: 16, opacity: .95,
-        }}>
-          <svg width="9" height="15" viewBox="0 0 9 15" fill="none">
-            <path d="M7.5 1L1.5 7.5l6 6.5" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          Voltar
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <button onClick={() => navigate(-1)} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            fontWeight: 700, fontSize: 14, color: '#fff', background: 'none',
+            border: 'none', cursor: 'pointer', opacity: .95,
+          }}>
+            <svg width="9" height="15" viewBox="0 0 9 15" fill="none">
+              <path d="M7.5 1L1.5 7.5l6 6.5" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Voltar
+          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={() => navigate(`/dividas/${debt.id}/editar`)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                background: 'rgba(255,255,255,.18)', color: '#fff',
+                border: 'none', borderRadius: 999, padding: '7px 13px',
+                fontSize: 13, fontWeight: 700, cursor: 'pointer',
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M4 20h4L18.5 9.5a2.1 2.1 0 00-3-3L5 17v3z" stroke="#fff" strokeWidth="2" strokeLinejoin="round"/>
+              </svg>
+              Editar
+            </button>
+            <button
+              onClick={() => setConfirmDelete(true)}
+              aria-label="Excluir dívida"
+              style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                width: 34, height: 34, background: 'rgba(255,255,255,.18)', color: '#fff',
+                border: 'none', borderRadius: 999, cursor: 'pointer',
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                <path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0v12a1 1 0 001 1h6a1 1 0 001-1V7" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
         <div style={{ fontSize: 13, opacity: .9, fontWeight: 600 }}>{debt.groupName}</div>
         <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 26, margin: '3px 0 14px', letterSpacing: '-.01em' }}>
           {debt.description}
@@ -166,6 +211,52 @@ function CreditorView({ debt, currentUser, onRefresh }: { debt: Debt; currentUse
           ))}
         </div>
       </div>
+
+      {confirmDelete && (
+        <div
+          onClick={() => { if (!deleting) setConfirmDelete(false) }}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,.45)',
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: 480 }}
+          >
+            <div style={{
+              width: 44, height: 44, borderRadius: 14, background: '#FFEDE8',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, marginBottom: 14,
+            }}>🗑️</div>
+            <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 19, color: '#15151A', marginBottom: 6 }}>
+              {debt.editavel === false ? 'Não dá para excluir' : 'Excluir esta dívida?'}
+            </div>
+            <div style={{ fontSize: 13.5, color: '#6B6B76', lineHeight: 1.5, marginBottom: 20 }}>
+              {debt.editavel === false
+                ? 'Já há pagamento em andamento nesta dívida. Rejeite ou trate os pagamentos antes de excluir.'
+                : <>“{debt.description}” e suas parcelas serão removidas para todos. Esta ação não pode ser desfeita.</>}
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => setConfirmDelete(false)}
+                disabled={deleting}
+                style={{ flex: 1, padding: 14, borderRadius: 14, border: 'none', cursor: 'pointer', background: '#F0F0F4', color: '#3A3A42', fontWeight: 800, fontSize: 14.5 }}
+              >
+                {debt.editavel === false ? 'Entendi' : 'Cancelar'}
+              </button>
+              {debt.editavel !== false && (
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  style={{ flex: 1, padding: 14, borderRadius: 14, border: 'none', cursor: 'pointer', background: '#E0431F', color: '#fff', fontWeight: 800, fontSize: 14.5 }}
+                >
+                  {deleting ? 'Excluindo...' : 'Excluir'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

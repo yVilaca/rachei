@@ -13,6 +13,9 @@ export function mapUser(data: Record<string, unknown>): User {
     avatarUrl: (data.avatar_url as string) || undefined,  // "" vira undefined
     plan: data.plan as User['plan'],
     createdAt: data.date_joined as string,
+    notifCobrancas: (data.notif_cobracas as boolean) ?? true,
+    notifConfirmacoes: (data.notif_confirmacoes as boolean) ?? true,
+    notifLembretes: (data.notif_lembretes as boolean) ?? true,
   }
 }
 
@@ -60,6 +63,23 @@ export const authService = {
   async me(): Promise<User> {
     const { data } = await api.get('/api/auth/me/')
     return mapUser(data)
+  },
+
+  async updateProfile(input: {
+    name?: string
+    notifCobrancas?: boolean
+    notifConfirmacoes?: boolean
+    notifLembretes?: boolean
+  }): Promise<User> {
+    const payload: Record<string, unknown> = {}
+    if (input.name !== undefined) payload.name = input.name
+    if (input.notifCobrancas !== undefined) payload.notif_cobracas = input.notifCobrancas
+    if (input.notifConfirmacoes !== undefined) payload.notif_confirmacoes = input.notifConfirmacoes
+    if (input.notifLembretes !== undefined) payload.notif_lembretes = input.notifLembretes
+    const { data } = await api.patch('/api/auth/me/', payload)
+    const user = mapUser(data)
+    useAuthStore.getState().setUser(user)   // reflete no app na hora
+    return user
   },
 
   async forgotPassword(email: string): Promise<void> {

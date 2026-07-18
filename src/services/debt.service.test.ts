@@ -81,3 +81,43 @@ describe('debtService.createDebt — payload camel→snake', () => {
     expect(captured!).not.toHaveProperty('paid_by_id')
   })
 })
+
+describe('debtService.updateDebt', () => {
+  it('envia apenas a descrição quando não há alteração de valores', async () => {
+    let captured: Record<string, unknown> | null = null
+    server.use(http.patch(`${API}/api/despesas/:id/`, async ({ request }) => {
+      captured = (await request.json()) as Record<string, unknown>
+      return HttpResponse.json(apiDebt)
+    }))
+    await debtService.updateDebt('d1', { description: 'Novo nome' })
+    expect(captured).toEqual({ description: 'Novo nome' })
+  })
+
+  it('envia total + split + parcelas quando há debtors', async () => {
+    let captured: Record<string, unknown> | null = null
+    server.use(http.patch(`${API}/api/despesas/:id/`, async ({ request }) => {
+      captured = (await request.json()) as Record<string, unknown>
+      return HttpResponse.json(apiDebt)
+    }))
+    await debtService.updateDebt('d1', {
+      description: 'Jantar', totalAmountCents: 8000, splitType: 'custom',
+      debtors: [{ userId: '2', amountCents: 8000 }],
+    })
+    expect(captured!).toMatchObject({
+      description: 'Jantar', total_amount_cents: 8000, split_type: 'custom',
+      parcelas: [{ debtor_id: 2, amount_cents: 8000 }],
+    })
+  })
+})
+
+describe('debtService.deleteDebt', () => {
+  it('faz DELETE no endpoint da despesa', async () => {
+    let called = false
+    server.use(http.delete(`${API}/api/despesas/:id/`, () => {
+      called = true
+      return new HttpResponse(null, { status: 204 })
+    }))
+    await debtService.deleteDebt('d1')
+    expect(called).toBe(true)
+  })
+})

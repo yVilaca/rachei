@@ -12,6 +12,9 @@ export interface User {
   avatarUrl?: string
   plan: UserPlan
   createdAt: string
+  notifCobrancas: boolean
+  notifConfirmacoes: boolean
+  notifLembretes: boolean
 }
 
 /** Campos mínimos retornados pelo UserListSerializer do backend. */
@@ -63,6 +66,8 @@ export interface Debt {
   splitType: SplitType
   createdAt: string
   installments: Installment[]
+  /** true = valores/exclusão liberados (ninguém pagou ainda). Só no detalhe. */
+  editavel?: boolean
 }
 
 export interface Installment {

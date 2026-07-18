@@ -1,5 +1,5 @@
 import api from '../lib/api'
-import type { Debt, Installment, NewDebtInput } from '../types'
+import type { Debt, Installment, NewDebtInput, SplitType } from '../types'
 
 // ── Tipos brutos da API (snake_case) ─────────────────────────────────────────
 
@@ -32,6 +32,7 @@ interface ApiDebt {
   paid_by: ApiUserMin
   created_at: string
   parcelas: (ApiParcelaBalance | ApiParcelaDetail)[]
+  editavel?: boolean
 }
 
 // ── Transformadores ───────────────────────────────────────────────────────────
@@ -63,6 +64,7 @@ function toDebt(raw: ApiDebt): Debt {
     splitType: raw.split_type,
     createdAt: raw.created_at,
     installments: raw.parcelas.map(toInstallment),
+    editavel: raw.editavel,
   }
 }
 
@@ -92,6 +94,24 @@ export const debtService = {
     }
     const { data } = await api.post<ApiDebt>('/api/despesas/', payload)
     return toDebt(data)
+  },
+
+  async updateDebt(
+    id: string,
+    input: { description: string; totalAmountCents?: number; splitType?: SplitType; debtors?: { userId: string; amountCents: number }[] },
+  ): Promise<Debt> {
+    const payload: Record<string, unknown> = { description: input.description }
+    if (input.debtors) {
+      payload.total_amount_cents = input.totalAmountCents
+      payload.split_type = input.splitType
+      payload.parcelas = input.debtors.map((d) => ({ debtor_id: Number(d.userId), amount_cents: d.amountCents }))
+    }
+    const { data } = await api.patch<ApiDebt>(`/api/despesas/${id}/`, payload)
+    return toDebt(data)
+  },
+
+  async deleteDebt(id: string): Promise<void> {
+    await api.delete(`/api/despesas/${id}/`)
   },
 
   async sendProof(installmentId: string, fileUrl?: string): Promise<void> {

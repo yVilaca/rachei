@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../../stores/auth.store'
 import { getInitials } from '../../../lib/utils'
@@ -6,10 +6,12 @@ import { useToast } from '../../../hooks/useToast'
 import Toast from '../../../components/Toast'
 import { groupService } from '../../../services/group.service'
 import { debtService } from '../../../services/debt.service'
-import type { GroupDetail, SplitType } from '../../../types'
+import type { Debt, GroupDetail, SplitType } from '../../../types'
 
 interface DebtFormProps {
   groupId: string
+  /** Presente = modo edição (prefill + PATCH em vez de criar). */
+  debt?: Debt
 }
 
 const LABEL: React.CSSProperties = {
@@ -19,10 +21,14 @@ const LABEL: React.CSSProperties = {
 const fmt = (cents: number) =>
   (cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-export default function DebtForm({ groupId }: DebtFormProps) {
+export default function DebtForm({ groupId, debt }: DebtFormProps) {
   const navigate = useNavigate()
   const currentUser = useAuthStore((s) => s.currentUser)
   const [submitting, setSubmitting] = useState(false)
+
+  const isEdit = !!debt
+  // Trava de valores: em edição, quando a dívida já teve pagamento (editavel === false).
+  const locked = isEdit && debt!.editavel === false
 
   const [group, setGroup] = useState<GroupDetail | null>(null)
   const [loadError, setLoadError] = useState(false)
@@ -47,9 +53,24 @@ export default function DebtForm({ groupId }: DebtFormProps) {
   const [splitType, setSplitType] = useState<SplitType>('equal')
   const [customCents, setCustomCents] = useState<Record<string, number>>({})
 
-  // Inicializa selectedDebtors quando o grupo carregar
+  // Modo edição: prefill a partir da dívida (uma vez).
+  const prefilled = useRef(false)
   useEffect(() => {
-    if (activeMembers.length > 0 && selectedDebtors.length === 0) {
+    if (debt && !prefilled.current) {
+      prefilled.current = true
+      setAmountCents(debt.totalAmountCents)
+      setDescription(debt.description)
+      setSplitType(debt.splitType)
+      setSelectedDebtors(debt.installments.map((i) => i.debtor.id))
+      const cc: Record<string, number> = {}
+      debt.installments.forEach((i) => { cc[i.debtor.id] = i.amountCents })
+      setCustomCents(cc)
+    }
+  }, [debt])
+
+  // Modo criação: seleciona todos os membros ativos por padrão (uma vez).
+  useEffect(() => {
+    if (!isEdit && activeMembers.length > 0 && selectedDebtors.length === 0) {
       setSelectedDebtors(activeMembers.map((m) => m.user!.id))
     }
   }, [activeMembers.length]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -91,7 +112,10 @@ export default function DebtForm({ groupId }: DebtFormProps) {
     ? 'Defina o valor de cada participante selecionado'
     : null
 
-  const formError = descError ?? amountError ?? debtorError ?? splitError ?? zeroCentsError ?? null
+  // Travado: só a descrição importa. Livre: valida tudo.
+  const formError = locked
+    ? descError
+    : (descError ?? amountError ?? debtorError ?? splitError ?? zeroCentsError ?? null)
   const canSubmit = !formError
 
   // ── handlers ─────────────────────────────────────────────────────────────
@@ -127,10 +151,20 @@ export default function DebtForm({ groupId }: DebtFormProps) {
 
     setSubmitting(true)
     try {
-      await debtService.createDebt({ groupId, description, totalAmountCents: amountCents, splitType, debtors })
-      navigate(`/grupos/${groupId}`)
+      if (isEdit) {
+        await debtService.updateDebt(
+          debt!.id,
+          locked
+            ? { description }
+            : { description, totalAmountCents: amountCents, splitType, debtors },
+        )
+        navigate(`/dividas/${debt!.id}`)
+      } else {
+        await debtService.createDebt({ groupId, description, totalAmountCents: amountCents, splitType, debtors })
+        navigate(`/grupos/${groupId}`)
+      }
     } catch {
-      showToast('Erro ao registrar dívida. Tente novamente.')
+      showToast(isEdit ? 'Erro ao salvar. Tente novamente.' : 'Erro ao registrar dívida. Tente novamente.')
       setSubmitting(false)
     }
   }
@@ -154,9 +188,23 @@ export default function DebtForm({ groupId }: DebtFormProps) {
 
   const showDescError = touchedDesc && !!descError
   const showAmountError = touchedAmount && !!amountError
+  const lockStyle: React.CSSProperties = locked ? { opacity: 0.5, pointerEvents: 'none' } : {}
 
   return (
     <div style={{ padding: '8px 22px 160px', position: 'relative' }}>
+
+      {locked && (
+        <div style={{
+          marginTop: 12, background: '#FFF8EE', border: '1px solid #FCE6C0',
+          borderRadius: 14, padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'flex-start',
+        }}>
+          <span style={{ fontSize: 18, lineHeight: 1 }}>🔒</span>
+          <div style={{ fontSize: 13, color: '#8A6D3B', lineHeight: 1.45 }}>
+            Esta dívida já tem <b>pagamento em andamento</b>. Você pode ajustar a
+            descrição; os valores e participantes ficam bloqueados.
+          </div>
+        </div>
+      )}
 
       {/* GRUPO */}
       <div style={{ marginTop: 14 }}>
@@ -173,7 +221,7 @@ export default function DebtForm({ groupId }: DebtFormProps) {
       </div>
 
       {/* VALOR TOTAL */}
-      <div style={{ marginTop: 22 }}>
+      <div style={{ marginTop: 22, ...lockStyle }}>
         <div style={LABEL}>VALOR TOTAL</div>
         <div style={{
           display: 'flex', alignItems: 'center',
@@ -223,7 +271,7 @@ export default function DebtForm({ groupId }: DebtFormProps) {
       </div>
 
       {/* QUEM PAGOU — sempre o usuário logado (credor) */}
-      <div style={{ marginTop: 22 }}>
+      <div style={{ marginTop: 22, ...lockStyle }}>
         <div style={LABEL}>QUEM PAGOU (CREDOR)</div>
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -244,7 +292,7 @@ export default function DebtForm({ groupId }: DebtFormProps) {
       </div>
 
       {/* QUEM DIVIDE */}
-      <div style={{ marginTop: 22 }}>
+      <div style={{ marginTop: 22, ...lockStyle }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
           <span style={LABEL}>QUEM DIVIDE</span>
           <span style={{ fontSize: 11.5, color: '#6B6B76' }}>
@@ -346,7 +394,7 @@ export default function DebtForm({ groupId }: DebtFormProps) {
 
       {/* DIVISÃO */}
       {selectedCount > 0 && (
-        <div style={{ marginTop: 22 }}>
+        <div style={{ marginTop: 22, ...lockStyle }}>
           <div style={LABEL}>DIVISÃO</div>
           <div style={{ display: 'flex', background: '#F0F0F4', borderRadius: 14, padding: 4 }}>
             {(['equal', 'custom'] as SplitType[]).map((type) => {
@@ -423,7 +471,11 @@ export default function DebtForm({ groupId }: DebtFormProps) {
             boxShadow: submitting || (!canSubmit && submitAttempted) ? 'none' : '0 8px 18px rgba(255,84,54,.3)',
           }}
         >
-          {submitting ? 'Registrando...' : 'Registrar dívida'}
+          {submitting
+            ? 'Salvando...'
+            : isEdit
+            ? (locked ? 'Salvar descrição' : 'Salvar alterações')
+            : 'Registrar dívida'}
         </button>
       </div>
     </div>

@@ -121,6 +121,34 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Acertar contas — atalho para quitar o que você deve */}
+      {!loading && (
+        <div style={{ padding: '14px 20px 0' }}>
+          <button
+            onClick={() => navigate('/acertar')}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+              background: '#fff', borderRadius: 16, padding: '14px 16px',
+              boxShadow: '0 2px 10px rgba(0,0,0,.04)', border: 'none', cursor: 'pointer', textAlign: 'left',
+            }}
+          >
+            <div style={{
+              width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+              background: '#FFF0ED', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
+            }}>🤝</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: 14.5, color: '#1A1A1F' }}>Acertar contas</div>
+              <div style={{ fontSize: 12, color: '#6B6B76', marginTop: 1 }}>
+                {totalAPagar > 0 ? `Você deve ${formatCurrency(totalAPagar)} no total` : 'Quite dívidas de uma vez'}
+              </div>
+            </div>
+            <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
+              <path d="M1 1l6 6-6 6" stroke="#C0C0C8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      )}
+
       {!loading && totalItems > 0 && (
         <div style={{ padding: '24px 20px 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>

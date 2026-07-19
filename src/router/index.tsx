@@ -12,6 +12,7 @@ import GroupsPage from '../features/groups/GroupsPage'
 import NewDebtPage from '../features/debts/NewDebtPage'
 import EditDebtPage from '../features/debts/EditDebtPage'
 import DebtDetailPage from '../features/debts/DebtDetailPage'
+import SettleUpPage from '../features/settle/SettleUpPage'
 import PaymentLinkPage from '../features/payment/PaymentLinkPage'
 import ProfilePage from '../features/profile/ProfilePage'
 import ActivityPage from '../features/activity/ActivityPage'
@@ -42,6 +43,7 @@ export const router = createBrowserRouter([
       { path: '/grupos/:id/nova-divida', element: <PrivateRoute><NewDebtPage /></PrivateRoute> },
       { path: '/dividas/:id/editar', element: <PrivateRoute><EditDebtPage /></PrivateRoute> },
       { path: '/dividas/:id', element: <PrivateRoute><DebtDetailPage /></PrivateRoute> },
+      { path: '/acertar', element: <PrivateRoute><SettleUpPage /></PrivateRoute> },
       { path: '/pagar/:token', element: <PaymentLinkPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuthStore } from '../../../stores/auth.store'
 import { formatCurrency, formatDate } from '../../../lib/utils'
 import type { Debt } from '../../../types'
 
@@ -8,6 +9,27 @@ interface DebtListProps {
 }
 
 type Filter = 'all' | 'pending' | 'paid'
+
+/** Status da dívida do ponto de vista do usuário atual. */
+function statusParaUsuario(debt: Debt, userId?: string) {
+  const pendingCount = debt.installments.filter((i) => i.status !== 'paid').length
+  if (pendingCount === 0) {
+    return { label: 'Quitada', bg: '#E9F9F0', fg: '#0E8F5C' }
+  }
+  // Credor: as pendências são valores a receber, não uma dívida sua.
+  if (debt.paidBy.id === userId) {
+    return { label: 'A receber', bg: '#E9F9F0', fg: '#0E8F5C' }
+  }
+  const minhas = debt.installments.filter((i) => i.debtor.id === userId)
+  if (minhas.some((i) => i.status === 'pending')) {
+    return { label: 'Você deve', bg: '#FFF0ED', fg: '#E0431F' }
+  }
+  if (minhas.some((i) => i.status === 'awaiting_confirmation')) {
+    return { label: 'Em análise', bg: '#F0F0F4', fg: '#6B6B76' }
+  }
+  // Sua parte já quitada, mas ainda há pendências de outros.
+  return { label: 'Sua parte quitada', bg: '#E9F9F0', fg: '#0E8F5C' }
+}
 
 const DEBT_ICON_COLORS = ['#FFF0ED', '#EDF4FF', '#EDFFF6', '#F5EEFF', '#FFFBEC']
 
@@ -27,6 +49,7 @@ function getDebtEmoji(description: string): string {
 export default function DebtList({ debts }: DebtListProps) {
   const [filter, setFilter] = useState<Filter>('all')
   const navigate = useNavigate()
+  const currentUserId = useAuthStore((s) => s.currentUser?.id)
 
   const filtered = debts.filter((debt) => {
     if (filter === 'all') return true
@@ -71,12 +94,9 @@ export default function DebtList({ debts }: DebtListProps) {
         {filtered.map((debt, idx) => {
           const pendingCount = debt.installments.filter((i) => i.status !== 'paid').length
           const totalCount = debt.installments.length
-          const isFullyPaid = pendingCount === 0
           const payerName = debt.paidBy.name.split(' ')[0]
           const iconBg = DEBT_ICON_COLORS[idx % DEBT_ICON_COLORS.length]
-          const statusBg = isFullyPaid ? '#E9F9F0' : '#FFF0ED'
-          const statusFg = isFullyPaid ? '#0E8F5C' : '#E0431F'
-          const statusLabel = isFullyPaid ? 'Quitada' : `${pendingCount} pendente${pendingCount > 1 ? 's' : ''}`
+          const { label: statusLabel, bg: statusBg, fg: statusFg } = statusParaUsuario(debt, currentUserId)
           const progress = `${totalCount - pendingCount} de ${totalCount} quitado${totalCount - pendingCount !== 1 ? 's' : ''}`
 
           return (

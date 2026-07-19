@@ -354,7 +354,7 @@ function DebtorView({
           background: isPaid ? '#E9F9F0' : '#fff',
           borderRadius: 22, padding: '20px 20px 18px',
           boxShadow: '0 4px 16px rgba(0,0,0,.06)',
-          border: isPaid ? '1.5px solid #BEE9D2' : isAwaiting ? '1.5px solid #FCE6C0' : '1.5px solid #FFE0D2',
+          border: isPaid ? '1.5px solid #BEE9D2' : isAwaiting ? '1.5px solid #EEEEF2' : '1.5px solid #FFE0D2',
           marginBottom: 14,
         }}>
           <div style={{ fontSize: 13, color: '#6B6B76', fontWeight: 600, marginBottom: 6 }}>
@@ -455,35 +455,33 @@ function DebtorView({
 
         {isAwaiting && (
           <div style={{
-            background: '#FFF8EE', border: '1px solid #FCE6C0',
-            borderRadius: 16, padding: '16px 18px', marginBottom: 14,
-            display: 'flex', alignItems: 'flex-start', gap: 12,
+            background: '#fff', border: '1px solid #EEEEF2',
+            borderRadius: 16, padding: '15px 18px', marginBottom: 14,
+            boxShadow: '0 2px 8px rgba(0,0,0,.04)',
           }}>
-            <span style={{ fontSize: 22, lineHeight: 1 }}>⏳</span>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#B57400' }}>
-                Você declarou o pagamento de {formatCurrency(installment.amountCents)}
-              </div>
-              <div style={{ fontSize: 12.5, color: '#9A7318', marginTop: 3 }}>
-                Aguardando {creditorName} confirmar o recebimento.
-              </div>
+            <div style={{ fontWeight: 800, fontSize: 13.5, color: '#15151A' }}>
+              Pagamento em análise
+            </div>
+            <div style={{ fontSize: 12.5, color: '#6B6B76', marginTop: 4, lineHeight: 1.5 }}>
+              Você declarou {formatCurrency(installment.amountCents)}. Sua parte fica quitada assim
+              que {creditorName} confirmar o recebimento.
             </div>
           </div>
         )}
 
         {isPaid && (
           <div style={{
-            background: '#E9F9F0', border: '1px solid #BEE9D2',
-            borderRadius: 16, padding: '16px 18px', marginBottom: 14,
-            display: 'flex', alignItems: 'flex-start', gap: 12,
+            background: '#fff', border: '1px solid #EEEEF2',
+            borderRadius: 16, padding: '15px 18px', marginBottom: 14,
+            boxShadow: '0 2px 8px rgba(0,0,0,.04)',
           }}>
-            <span style={{ fontSize: 22, lineHeight: 1 }}>✅</span>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#0E8F5C' }}>Tudo quitado!</div>
-              <div style={{ fontSize: 12.5, color: '#3BA877', marginTop: 3 }}>
-                Sua parte desta dívida está totalmente quitada
-                {compensadoCents > 0 ? ' (pagamento + compensação)' : ''}.
-              </div>
+            <div style={{ fontWeight: 800, fontSize: 13.5, color: '#0E8F5C' }}>
+              Sua parte está quitada
+            </div>
+            <div style={{ fontSize: 12.5, color: '#6B6B76', marginTop: 4, lineHeight: 1.5 }}>
+              {creditorName} confirmou o recebimento
+              {installment.confirmedAt ? ` em ${formatDate(installment.confirmedAt)}` : ''}
+              {compensadoCents > 0 ? '. Parte foi abatida por compensação.' : '.'}
             </div>
           </div>
         )}

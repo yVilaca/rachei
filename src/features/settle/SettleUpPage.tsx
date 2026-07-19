@@ -4,13 +4,26 @@ import { formatCurrency, getInitials } from '../../lib/utils'
 import { avatarFor } from '../../lib/avatar'
 import { useToast } from '../../hooks/useToast'
 import Toast from '../../components/Toast'
-import { acertoService, type AcertoPessoa, type AcertoResumo } from '../../services/acerto.service'
+import {
+  acertoService,
+  type AcertoPessoa,
+  type AcertoAConfirmar,
+  type AcertoResumo,
+} from '../../services/acerto.service'
 
 type Action =
-  | { kind: 'settle-one'; pessoa: AcertoPessoa }
-  | { kind: 'settle-all'; total: number; count: number }
-  | { kind: 'confirm'; pessoa: AcertoPessoa }
+  | { kind: 'propor'; pessoa: AcertoPessoa }
+  | { kind: 'confirmar'; item: AcertoAConfirmar }
+  | { kind: 'rejeitar'; item: AcertoAConfirmar }
   | null
+
+/** Descreve o que sobra após a compensação, dado o saldo líquido e um nome. */
+function resultado(saldoCents: number, nome: string): string {
+  const first = nome.split(' ')[0]
+  if (saldoCents === 0) return 'Fica tudo zerado — ninguém deve nada.'
+  if (saldoCents > 0) return `Sobra ${first} te devendo ${formatCurrency(saldoCents)}.`
+  return `Sobra você devendo ${formatCurrency(-saldoCents)} a ${first}.`
+}
 
 export default function SettleUpPage() {
   const navigate = useNavigate()
@@ -34,21 +47,19 @@ export default function SettleUpPage() {
 
   useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const totalDeve = (data?.voceDeve ?? []).reduce((a, p) => a + p.amountCents, 0)
-
   const runAction = async () => {
     if (!action || busy) return
     setBusy(true)
     try {
-      if (action.kind === 'settle-one') {
-        await acertoService.declarar(action.pessoa.id)
-        showToast(`Acerto enviado a ${action.pessoa.name.split(' ')[0]}`)
-      } else if (action.kind === 'settle-all') {
-        await acertoService.declarar()
-        showToast('Acertos enviados!')
+      if (action.kind === 'propor') {
+        await acertoService.propor(action.pessoa.id)
+        showToast(`Proposta enviada a ${action.pessoa.name.split(' ')[0]}`)
+      } else if (action.kind === 'confirmar') {
+        await acertoService.confirmar(action.item.id)
+        showToast('Compensação confirmada!')
       } else {
-        await acertoService.confirmar(action.pessoa.id)
-        showToast('Recebimento confirmado!')
+        await acertoService.rejeitar(action.item.id)
+        showToast('Proposta recusada.')
       }
       setAction(null)
       await load()
@@ -58,6 +69,12 @@ export default function SettleUpPage() {
       setBusy(false)
     }
   }
+
+  const pessoas = data?.pessoas ?? []
+  const compensaveis = pessoas.filter((p) => p.compensavel)
+  const outros = pessoas.filter((p) => !p.compensavel && p.saldoCents !== 0)
+  const aConfirmar = data?.aConfirmar ?? []
+  const vazio = compensaveis.length === 0 && aConfirmar.length === 0 && outros.length === 0
 
   return (
     <div style={{ minHeight: '100dvh', background: '#F5F5F8', fontFamily: '"Plus Jakarta Sans", sans-serif', paddingBottom: 40 }}>
@@ -76,63 +93,65 @@ export default function SettleUpPage() {
           Acertar contas
         </div>
         <div style={{ fontSize: 13, opacity: .92, marginTop: 3 }}>
-          Quite o que você deve — de uma vez ou pessoa a pessoa.
+          Compense dívidas mútuas: sobra só a diferença.
         </div>
       </div>
 
       <div style={{ padding: '18px 20px 0' }}>
         {loading ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {[0, 1].map((i) => <div key={i} style={{ height: 72, background: '#fff', borderRadius: 16, opacity: .5 }} />)}
+            {[0, 1].map((i) => <div key={i} style={{ height: 88, background: '#fff', borderRadius: 16, opacity: .5 }} />)}
           </div>
         ) : error ? (
           <Empty emoji="⚠️" title="Não foi possível carregar" sub="Tente novamente em instantes." />
+        ) : vazio ? (
+          <Empty emoji="🎉" title="Nada a compensar" sub="Você não tem dívidas mútuas para acertar agora." />
         ) : (
           <>
-            {/* VOCÊ DEVE */}
-            {(data?.voceDeve.length ?? 0) > 0 && (
-              <>
-                <SectionTitle>Você deve</SectionTitle>
-
-                {data!.voceDeve.length > 1 && (
-                  <button
-                    onClick={() => setAction({ kind: 'settle-all', total: totalDeve, count: data!.voceDeve.length })}
-                    style={{
-                      width: '100%', marginBottom: 12, padding: 15, borderRadius: 16, border: 'none', cursor: 'pointer',
-                      background: 'linear-gradient(135deg,#FF5436,#FF8A3D)', color: '#fff',
-                      fontWeight: 800, fontSize: 15.5, boxShadow: '0 8px 18px rgba(255,84,54,.28)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                    }}
-                  >
-                    Acertar tudo · {formatCurrency(totalDeve)}
-                  </button>
-                )}
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 8 }}>
-                  {data!.voceDeve.map((p) => (
-                    <PersonRow key={p.id} p={p} tone="owe" actionLabel="Acertar"
-                      onAction={() => setAction({ kind: 'settle-one', pessoa: p })} />
-                  ))}
-                </div>
-              </>
-            )}
-
-            {/* AGUARDANDO SUA CONFIRMAÇÃO */}
-            {(data?.aConfirmar.length ?? 0) > 0 && (
+            {/* PROPOSTAS RECEBIDAS */}
+            {aConfirmar.length > 0 && (
               <>
                 <SectionTitle>Aguardando sua confirmação</SectionTitle>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {data!.aConfirmar.map((p) => (
-                    <PersonRow key={p.id} p={p} tone="receive" actionLabel="Confirmar"
-                      onAction={() => setAction({ kind: 'confirm', pessoa: p })} />
+                  {aConfirmar.map((item) => (
+                    <ConfirmCard
+                      key={item.id}
+                      item={item}
+                      onConfirm={() => setAction({ kind: 'confirmar', item })}
+                      onReject={() => setAction({ kind: 'rejeitar', item })}
+                    />
                   ))}
                 </div>
               </>
             )}
 
-            {/* VAZIO */}
-            {(data?.voceDeve.length ?? 0) === 0 && (data?.aConfirmar.length ?? 0) === 0 && (
-              <Empty emoji="🎉" title="Tudo acertado!" sub="Você não tem contas pendentes para acertar." />
+            {/* COMPENSÁVEIS */}
+            {compensaveis.length > 0 && (
+              <>
+                <SectionTitle>Dá para compensar</SectionTitle>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {compensaveis.map((p) => (
+                    <CompensarCard
+                      key={p.id}
+                      p={p}
+                      onAction={() => setAction({ kind: 'propor', pessoa: p })}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* OUTROS SALDOS (sem mutualidade, apenas informativo) */}
+            {outros.length > 0 && (
+              <>
+                <SectionTitle>Outros saldos</SectionTitle>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {outros.map((p) => <InfoRow key={p.id} p={p} />)}
+                </div>
+                <div style={{ fontSize: 12, color: '#6B6B76', margin: '10px 2px 0', lineHeight: 1.5 }}>
+                  Sem dívida mútua para compensar. Acerte esses pagamentos pela dívida.
+                </div>
+              </>
             )}
           </>
         )}
@@ -147,46 +166,52 @@ export default function SettleUpPage() {
           style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
         >
           <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: 480 }}>
-            {action.kind === 'confirm' ? (
+            {action.kind === 'propor' ? (
               <>
-                <SheetIcon bg="#E9F9F0">✅</SheetIcon>
-                <SheetTitle>Confirmar recebimento?</SheetTitle>
+                <SheetIcon bg="#FFF0ED">🔄</SheetIcon>
+                <SheetTitle>Compensar com {action.pessoa.name.split(' ')[0]}?</SheetTitle>
                 <SheetText>
-                  Você confirma que recebeu <b>{formatCurrency(action.pessoa.amountCents)}</b> de {action.pessoa.name}?
-                  As parcelas dele com você serão quitadas.
+                  As dívidas de vocês nos dois sentidos serão quitadas.{' '}
+                  <b>{resultado(action.pessoa.saldoCents, action.pessoa.name)}</b>{' '}
+                  {action.pessoa.name.split(' ')[0]} precisa confirmar.
                 </SheetText>
               </>
-            ) : action.kind === 'settle-all' ? (
+            ) : action.kind === 'confirmar' ? (
               <>
-                <SheetIcon bg="#FFF0ED">🤝</SheetIcon>
-                <SheetTitle>Acertar tudo?</SheetTitle>
+                <SheetIcon bg="#E9F9F0">✅</SheetIcon>
+                <SheetTitle>Confirmar compensação?</SheetTitle>
                 <SheetText>
-                  Vamos declarar <b>{formatCurrency(action.total)}</b> como pago com {action.count} pessoas.
-                  Cada uma confirma o recebimento.
+                  {action.item.de.name} propôs compensar as dívidas de vocês.{' '}
+                  <b>{resultado(action.item.saldoCents, action.item.de.name)}</b>
                 </SheetText>
               </>
             ) : (
               <>
-                <SheetIcon bg="#FFF0ED">🤝</SheetIcon>
-                <SheetTitle>Acertar com {action.pessoa.name.split(' ')[0]}?</SheetTitle>
+                <SheetIcon bg="#FDECEC">✕</SheetIcon>
+                <SheetTitle>Recusar proposta?</SheetTitle>
                 <SheetText>
-                  Vamos declarar <b>{formatCurrency(action.pessoa.amountCents)}</b> como pago.
-                  {action.pessoa.name.split(' ')[0]} confirma o recebimento.
+                  A proposta de {action.item.de.name} será recusada e nada muda nas dívidas de vocês.
                 </SheetText>
               </>
             )}
             <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
               <button onClick={() => setAction(null)} disabled={busy}
                 style={{ flex: 1, padding: 14, borderRadius: 14, border: 'none', cursor: 'pointer', background: '#F0F0F4', color: '#3A3A42', fontWeight: 800, fontSize: 14.5 }}>
-                Cancelar
+                Voltar
               </button>
               <button onClick={runAction} disabled={busy}
                 style={{
                   flex: 1.4, padding: 14, borderRadius: 14, border: 'none', cursor: 'pointer',
-                  background: action.kind === 'confirm' ? '#11A36B' : 'linear-gradient(135deg,#FF5436,#FF8A3D)',
+                  background:
+                    action.kind === 'confirmar' ? '#11A36B'
+                    : action.kind === 'rejeitar' ? '#E5484D'
+                    : 'linear-gradient(135deg,#FF5436,#FF8A3D)',
                   color: '#fff', fontWeight: 800, fontSize: 14.5,
                 }}>
-                {busy ? 'Enviando...' : action.kind === 'confirm' ? 'Confirmar' : 'Acertar'}
+                {busy ? 'Enviando...'
+                  : action.kind === 'confirmar' ? 'Confirmar'
+                  : action.kind === 'rejeitar' ? 'Recusar'
+                  : 'Enviar proposta'}
               </button>
             </div>
           </div>
@@ -206,32 +231,115 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   )
 }
 
-function PersonRow({ p, tone, actionLabel, onAction }: { p: AcertoPessoa; tone: 'owe' | 'receive'; actionLabel: string; onAction: () => void }) {
-  const av = avatarFor(p.id)
-  const amountColor = tone === 'owe' ? '#FF5436' : '#0E8F5C'
-  const btnBg = tone === 'owe' ? '#FFF0ED' : '#E9F9F0'
-  const btnFg = tone === 'owe' ? '#FF5436' : '#0E8F5C'
+function Avatar({ id, name }: { id: string; name: string }) {
+  const av = avatarFor(id)
+  return (
+    <div style={{
+      width: 42, height: 42, borderRadius: '50%', flexShrink: 0,
+      background: av.bg, color: av.fg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontWeight: 800, fontSize: 13,
+    }}>
+      {getInitials(name)}
+    </div>
+  )
+}
+
+/** Card de par compensável: mostra o resultado líquido e o CTA de propor. */
+function CompensarCard({ p, onAction }: { p: AcertoPessoa; onAction: () => void }) {
+  const positivo = p.saldoCents > 0
+  const zerado = p.saldoCents === 0
+  const first = p.name.split(' ')[0]
+  const resumo = zerado
+    ? 'Zera tudo entre vocês'
+    : positivo ? `Sobra ${first} te devendo` : 'Sobra você devendo'
+  const cor = zerado ? '#0E8F5C' : positivo ? '#0E8F5C' : '#FF5436'
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 16, padding: 14, boxShadow: '0 2px 10px rgba(0,0,0,.04)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <Avatar id={p.id} name={p.name} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 700, fontSize: 14.5, color: '#1A1A1F', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {p.name}
+          </div>
+          <div style={{ fontSize: 12, color: '#6B6B76', marginTop: 1 }}>Vocês se devem</div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, padding: '10px 12px', background: '#FAFAFC', borderRadius: 12 }}>
+        <span style={{ fontSize: 12.5, color: '#6B6B76' }}>{resumo}</span>
+        <span style={{ fontWeight: 800, fontSize: 15, color: cor }}>
+          {zerado ? formatCurrency(0) : formatCurrency(Math.abs(p.saldoCents))}
+        </span>
+      </div>
+
+      {p.acertoEnviado ? (
+        <div style={{ marginTop: 12, padding: 12, borderRadius: 12, background: '#FFF8EE', color: '#8A6D1F', fontWeight: 700, fontSize: 13, textAlign: 'center' }}>
+          Proposta enviada · aguardando {first}
+        </div>
+      ) : (
+        <button onClick={onAction}
+          style={{
+            width: '100%', marginTop: 12, padding: 13, borderRadius: 12, border: 'none', cursor: 'pointer',
+            background: 'linear-gradient(135deg,#FF5436,#FF8A3D)', color: '#fff', fontWeight: 800, fontSize: 14.5,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+          }}>
+          🔄 Compensar
+        </button>
+      )}
+    </div>
+  )
+}
+
+/** Card de proposta recebida: confirmar ou recusar. */
+function ConfirmCard({ item, onConfirm, onReject }: { item: AcertoAConfirmar; onConfirm: () => void; onReject: () => void }) {
+  return (
+    <div style={{ background: '#fff', borderRadius: 16, padding: 14, boxShadow: '0 2px 10px rgba(0,0,0,.04)', border: '1px solid #E9F9F0' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <Avatar id={item.de.id} name={item.de.name} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 700, fontSize: 14.5, color: '#1A1A1F', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {item.de.name}
+          </div>
+          <div style={{ fontSize: 12, color: '#6B6B76', marginTop: 1 }}>Propôs uma compensação</div>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 12, padding: '10px 12px', background: '#FAFAFC', borderRadius: 12, fontSize: 12.5, color: '#3A3A42' }}>
+        {resultado(item.saldoCents, item.de.name)}
+      </div>
+
+      <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+        <button onClick={onReject}
+          style={{ flex: 1, padding: 12, borderRadius: 12, border: 'none', cursor: 'pointer', background: '#FDECEC', color: '#E5484D', fontWeight: 800, fontSize: 13.5 }}>
+          Recusar
+        </button>
+        <button onClick={onConfirm}
+          style={{ flex: 1.4, padding: 12, borderRadius: 12, border: 'none', cursor: 'pointer', background: '#11A36B', color: '#fff', fontWeight: 800, fontSize: 13.5 }}>
+          Confirmar
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/** Linha informativa (saldo sem mutualidade). */
+function InfoRow({ p }: { p: AcertoPessoa }) {
+  const positivo = p.saldoCents > 0
   return (
     <div style={{ background: '#fff', borderRadius: 16, padding: 14, boxShadow: '0 2px 10px rgba(0,0,0,.04)', display: 'flex', alignItems: 'center', gap: 12 }}>
-      <div style={{
-        width: 42, height: 42, borderRadius: '50%', flexShrink: 0,
-        background: av.bg, color: av.fg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontWeight: 800, fontSize: 13,
-      }}>
-        {getInitials(p.name)}
-      </div>
+      <Avatar id={p.id} name={p.name} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 700, fontSize: 14.5, color: '#1A1A1F', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {p.name}
         </div>
-        <div style={{ fontWeight: 800, fontSize: 15, color: amountColor, marginTop: 1 }}>
-          {formatCurrency(p.amountCents)}
+        <div style={{ fontSize: 12, color: '#6B6B76', marginTop: 1 }}>
+          {positivo ? 'Te deve' : 'Você deve'}
         </div>
       </div>
-      <button onClick={onAction}
-        style={{ background: btnBg, color: btnFg, border: 'none', borderRadius: 12, padding: '10px 16px', fontWeight: 800, fontSize: 13.5, cursor: 'pointer', flexShrink: 0 }}>
-        {actionLabel}
-      </button>
+      <div style={{ fontWeight: 800, fontSize: 15, color: positivo ? '#0E8F5C' : '#FF5436', flexShrink: 0 }}>
+        {formatCurrency(Math.abs(p.saldoCents))}
+      </div>
     </div>
   )
 }

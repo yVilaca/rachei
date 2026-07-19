@@ -5,30 +5,66 @@ import api from '../lib/api'
 export interface AcertoPessoa {
   id: string
   name: string
-  amountCents: number
+  /** Saldo líquido: positivo = te devem; negativo = você deve. */
+  saldoCents: number
+  /** Há dívida mútua compensável com esta pessoa. */
+  compensavel: boolean
+  /** Você já enviou uma proposta pendente para esta pessoa. */
+  acertoEnviado: boolean
+}
+
+export interface AcertoAConfirmar {
+  /** Id da proposta (Acerto). */
+  id: string
+  /** Quem propôs a compensação. */
+  de: { id: string; name: string }
+  /** Saldo líquido seu com essa pessoa (negativo = você deve). */
+  saldoCents: number
 }
 
 export interface AcertoResumo {
-  /** Pessoas a quem você deve (pode acertar). */
-  voceDeve: AcertoPessoa[]
-  /** Pessoas que declararam acerto e aguardam sua confirmação. */
-  aConfirmar: AcertoPessoa[]
+  /** Contrapartes com saldo em aberto (ordenadas: quem você mais deve primeiro). */
+  pessoas: AcertoPessoa[]
+  /** Propostas recebidas aguardando sua confirmação. */
+  aConfirmar: AcertoAConfirmar[]
 }
 
 // ── Brutos (snake_case) ────────────────────────────────────────────────────────
 
-interface ApiItem {
+interface ApiPessoa {
   pessoa: { id: number; name: string }
-  valor_cents: number
+  saldo_cents: number
+  compensavel: boolean
+  acerto_enviado: boolean
+}
+
+interface ApiAConfirmar {
+  id: string
+  de: { id: number; name: string }
+  saldo_cents: number
 }
 
 interface ApiResumo {
-  voce_deve: ApiItem[]
-  a_confirmar: ApiItem[]
+  pessoas: ApiPessoa[]
+  a_confirmar: ApiAConfirmar[]
 }
 
-function toPessoa(i: ApiItem): AcertoPessoa {
-  return { id: String(i.pessoa.id), name: i.pessoa.name, amountCents: i.valor_cents }
+function toPessoa(i: ApiPessoa): AcertoPessoa {
+  return {
+    id: String(i.pessoa.id),
+    name: i.pessoa.name,
+    saldoCents: i.saldo_cents,
+    compensavel: i.compensavel,
+    acertoEnviado: i.acerto_enviado,
+  }
+}
+
+function toAConfirmar(i: ApiAConfirmar): AcertoAConfirmar {
+  return {
+    id: i.id,
+    de: { id: String(i.de.id), name: i.de.name },
+    saldoCents: i.saldo_cents,
+  }
 }
 
 // ── Service ─────────────────────────────────────────────────────────────────────
@@ -37,23 +73,26 @@ export const acertoService = {
   async getResumo(): Promise<AcertoResumo> {
     const { data } = await api.get<ApiResumo>('/api/acertar/')
     return {
-      voceDeve: data.voce_deve.map(toPessoa),
-      aConfirmar: data.a_confirmar.map(toPessoa),
+      pessoas: data.pessoas.map(toPessoa),
+      aConfirmar: data.a_confirmar.map(toAConfirmar),
     }
   },
 
-  /** Declara acerto. Sem `paraId` = com todos que você deve. */
-  async declarar(paraId?: string, grupoId?: string): Promise<void> {
-    const body: Record<string, unknown> = {}
-    if (paraId) body.para_id = Number(paraId)
-    if (grupoId) body.grupo_id = grupoId
-    await api.post('/api/acertar/', body)
+  /** Propõe uma compensação com `paraId`. Retorna o id da proposta criada. */
+  async propor(paraId: string): Promise<string> {
+    const { data } = await api.post<{ id: string }>('/api/acertar/', {
+      para_id: Number(paraId),
+    })
+    return data.id
   },
 
-  /** Credor confirma o acerto declarado por `deId`. */
-  async confirmar(deId: string, grupoId?: string): Promise<void> {
-    const body: Record<string, unknown> = { de_id: Number(deId) }
-    if (grupoId) body.grupo_id = grupoId
-    await api.post('/api/acertar/confirmar/', body)
+  /** Confirma uma proposta recebida — compensa as dívidas. */
+  async confirmar(acertoId: string): Promise<void> {
+    await api.post(`/api/acertar/${acertoId}/confirmar/`, {})
+  },
+
+  /** Rejeita uma proposta recebida. */
+  async rejeitar(acertoId: string): Promise<void> {
+    await api.post(`/api/acertar/${acertoId}/rejeitar/`, {})
   },
 }

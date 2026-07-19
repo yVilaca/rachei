@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { server } from '../test/msw'
-import { acertoService } from './acerto.service'
+import { acertoService, NegociacaoExistenteError } from './acerto.service'
 
 const API = 'http://localhost:8000'
 
@@ -87,6 +87,15 @@ describe('acertoService.propor', () => {
     }))
     await acertoService.propor('2', ['p1', 'p2'])
     expect(body).toEqual({ para_id: 2, parcela_ids: ['p1', 'p2'] })
+  })
+
+  it('409 vira NegociacaoExistenteError com o id do acerto', async () => {
+    server.use(http.post(`${API}/api/acertar/`, () =>
+      HttpResponse.json({ detail: 'Já existe...', acerto_id: 'existente-1' }, { status: 409 })))
+    await expect(acertoService.propor('2')).rejects.toMatchObject({
+      name: 'NegociacaoExistenteError', acertoId: 'existente-1',
+    })
+    await expect(acertoService.propor('2')).rejects.toBeInstanceOf(NegociacaoExistenteError)
   })
 })
 

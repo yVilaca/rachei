@@ -1,4 +1,13 @@
+import { AxiosError } from 'axios'
 import api from '../lib/api'
+
+/** Lançado quando já existe uma proposta da outra pessoa para você (HTTP 409). */
+export class NegociacaoExistenteError extends Error {
+  constructor(public acertoId: string) {
+    super('Já existe uma negociação para esta dívida.')
+    this.name = 'NegociacaoExistenteError'
+  }
+}
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
 
@@ -153,8 +162,16 @@ export const acertoService = {
   async propor(paraId: string, parcelaIds?: string[]): Promise<string> {
     const body: Record<string, unknown> = { para_id: Number(paraId) }
     if (parcelaIds) body.parcela_ids = parcelaIds
-    const { data } = await api.post<{ id: string }>('/api/acertar/', body)
-    return data.id
+    try {
+      const { data } = await api.post<{ id: string }>('/api/acertar/', body)
+      return data.id
+    } catch (e) {
+      const err = e as AxiosError<{ acerto_id?: string }>
+      if (err.response?.status === 409 && err.response.data?.acerto_id) {
+        throw new NegociacaoExistenteError(err.response.data.acerto_id)
+      }
+      throw e
+    }
   },
 
   /** Confirma uma proposta recebida — compensa as dívidas. */

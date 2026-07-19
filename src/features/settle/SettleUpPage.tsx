@@ -6,6 +6,7 @@ import { useToast } from '../../hooks/useToast'
 import Toast from '../../components/Toast'
 import {
   acertoService,
+  NegociacaoExistenteError,
   type AcertoPessoa,
   type AcertoAConfirmar,
   type AcertoResumo,
@@ -120,14 +121,22 @@ export default function SettleUpPage() {
 
   const enviarProposta = async () => {
     if (!selPessoa || busy) return
+    const first = selPessoa.name.split(' ')[0]
     setBusy(true)
     try {
       await acertoService.propor(selPessoa.id, [...marcadas])
-      showToast(`Proposta enviada a ${selPessoa.name.split(' ')[0]}`)
+      showToast(`Proposta enviada a ${first}`)
       closeSelecao()
       await load()
-    } catch {
-      showToast('Algo deu errado. Tente novamente.')
+    } catch (e) {
+      if (e instanceof NegociacaoExistenteError) {
+        // A outra pessoa já propôs — leva para revisar (aceitar/recusar) a existente.
+        closeSelecao()
+        showToast(`${first} já propôs uma compensação — confirme ou recuse acima.`)
+        await load()
+      } else {
+        showToast('Algo deu errado. Tente novamente.')
+      }
     } finally {
       setBusy(false)
     }

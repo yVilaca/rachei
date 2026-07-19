@@ -14,7 +14,6 @@ import {
 } from '../../services/acerto.service'
 
 type Action =
-  | { kind: 'propor'; pessoa: AcertoPessoa }
   | { kind: 'confirmar'; item: AcertoAConfirmar }
   | { kind: 'rejeitar'; item: AcertoAConfirmar }
   | null
@@ -23,8 +22,8 @@ type Action =
 function resultado(saldoCents: number, nome: string): string {
   const first = nome.split(' ')[0]
   if (saldoCents === 0) return 'Fica tudo zerado — ninguém deve nada.'
-  if (saldoCents > 0) return `Sobra ${first} te devendo ${formatCurrency(saldoCents)}.`
-  return `Sobra você devendo ${formatCurrency(-saldoCents)} a ${first}.`
+  if (saldoCents > 0) return `${first.charAt(0).toUpperCase() + first.slice(1).toLowerCase()} ainda te deverá ${formatCurrency(saldoCents)}.`
+  return `Você ainda deverá ${formatCurrency(-saldoCents)} a ${first}.`
 }
 
 export default function SettleUpPage() {
@@ -37,16 +36,53 @@ export default function SettleUpPage() {
   const [busy, setBusy] = useState(false)
   const [detalhe, setDetalhe] = useState<AcertoDetalhe | null>(null)
   const [detalheLoading, setDetalheLoading] = useState(false)
+  // Seleção de dívidas a abater (fluxo de propor)
+  const [selPessoa, setSelPessoa] = useState<AcertoPessoa | null>(null)
+  const [selDet, setSelDet] = useState<AcertoDetalhe | null>(null)
+  const [selLoading, setSelLoading] = useState(false)
+  const [marcadas, setMarcadas] = useState<Set<string>>(new Set())
 
-  const openDetalhe = async (pessoaId: string) => {
+  // Revisão da seleção de uma proposta recebida (read-only)
+  const openRevisao = async (acertoId: string) => {
     setDetalheLoading(true)
     try {
-      setDetalhe(await acertoService.getDetalhe(pessoaId))
+      setDetalhe(await acertoService.getDetalheAcerto(acertoId))
     } catch {
       showToast('Não foi possível carregar o detalhamento.')
     } finally {
       setDetalheLoading(false)
     }
+  }
+
+  const openSelecao = async (pessoa: AcertoPessoa) => {
+    setSelPessoa(pessoa)
+    setSelDet(null)
+    setSelLoading(true)
+    try {
+      const det = await acertoService.getDetalhe(pessoa.id)
+      setSelDet(det)
+      setMarcadas(new Set([...det.voceRecebe, ...det.vocePaga].map((i) => i.id)))
+    } catch {
+      showToast('Não foi possível carregar as dívidas.')
+      setSelPessoa(null)
+    } finally {
+      setSelLoading(false)
+    }
+  }
+
+  const closeSelecao = () => {
+    setSelPessoa(null)
+    setSelDet(null)
+    setMarcadas(new Set())
+  }
+
+  const toggleMarcada = (id: string) => {
+    setMarcadas((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   }
 
   const load = async () => {
@@ -66,10 +102,7 @@ export default function SettleUpPage() {
     if (!action || busy) return
     setBusy(true)
     try {
-      if (action.kind === 'propor') {
-        await acertoService.propor(action.pessoa.id)
-        showToast(`Proposta enviada a ${action.pessoa.name.split(' ')[0]}`)
-      } else if (action.kind === 'confirmar') {
+      if (action.kind === 'confirmar') {
         await acertoService.confirmar(action.item.id)
         showToast('Compensação confirmada!')
       } else {
@@ -77,6 +110,21 @@ export default function SettleUpPage() {
         showToast('Proposta recusada.')
       }
       setAction(null)
+      await load()
+    } catch {
+      showToast('Algo deu errado. Tente novamente.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const enviarProposta = async () => {
+    if (!selPessoa || busy) return
+    setBusy(true)
+    try {
+      await acertoService.propor(selPessoa.id, [...marcadas])
+      showToast(`Proposta enviada a ${selPessoa.name.split(' ')[0]}`)
+      closeSelecao()
       await load()
     } catch {
       showToast('Algo deu errado. Tente novamente.')
@@ -134,7 +182,7 @@ export default function SettleUpPage() {
                       item={item}
                       onConfirm={() => setAction({ kind: 'confirmar', item })}
                       onReject={() => setAction({ kind: 'rejeitar', item })}
-                      onDetalhe={() => openDetalhe(item.de.id)}
+                      onDetalhe={() => openRevisao(item.id)}
                     />
                   ))}
                 </div>
@@ -150,8 +198,7 @@ export default function SettleUpPage() {
                     <CompensarCard
                       key={p.id}
                       p={p}
-                      onAction={() => setAction({ kind: 'propor', pessoa: p })}
-                      onDetalhe={() => openDetalhe(p.id)}
+                      onAction={() => openSelecao(p)}
                     />
                   ))}
                 </div>
@@ -223,6 +270,75 @@ export default function SettleUpPage() {
         </div>
       )}
 
+      {/* Sheet de seleção (propor compensação) */}
+      {selPessoa && (
+        <div
+          onClick={() => { if (!busy) closeSelecao() }}
+          style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: 480, maxHeight: '88dvh', overflowY: 'auto' }}>
+            {selLoading || !selDet ? (
+              <div style={{ padding: '30px 0', textAlign: 'center', color: '#6B6B76', fontSize: 14 }}>Carregando…</div>
+            ) : (() => {
+              const first = selPessoa.name.split(' ')[0]
+              const recebeSel = selDet.voceRecebe.filter((i) => marcadas.has(i.id)).reduce((a, i) => a + i.valorCents, 0)
+              const pagaSel = selDet.vocePaga.filter((i) => marcadas.has(i.id)).reduce((a, i) => a + i.valorCents, 0)
+              const netSel = recebeSel - pagaSel
+              const podeCompensar = recebeSel > 0 && pagaSel > 0
+              return (
+                <>
+                  <SheetTitle>Compensar com {first}</SheetTitle>
+                  <SheetText>Escolha as dívidas a abater — todas já vêm marcadas.</SheetText>
+
+                  <SelecaoGrupo
+                    titulo={`${first} deve a você`}
+                    itens={selDet.voceRecebe}
+                    cor="#0E8F5C"
+                    marcadas={marcadas}
+                    onToggle={toggleMarcada}
+                  />
+                  <SelecaoGrupo
+                    titulo={`Você deve a ${first}`}
+                    itens={selDet.vocePaga}
+                    cor="#FF5436"
+                    marcadas={marcadas}
+                    onToggle={toggleMarcada}
+                  />
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, padding: '14px 16px', background: '#FAFAFC', borderRadius: 14 }}>
+                    <span style={{ fontWeight: 800, fontSize: 14, color: '#15151A' }}>Depois de compensar</span>
+                    <span style={{ fontWeight: 800, fontSize: 16, color: netSel < 0 ? '#FF5436' : '#0E8F5C' }}>
+                      {formatCurrency(Math.abs(netSel))}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 12.5, color: podeCompensar ? '#6B6B76' : '#B57400', marginTop: 8, lineHeight: 1.5, textAlign: 'center' }}>
+                    {podeCompensar
+                      ? resultado(netSel, selPessoa.name)
+                      : 'Selecione ao menos uma dívida em cada sentido para compensar.'}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
+                    <button onClick={closeSelecao} disabled={busy}
+                      style={{ flex: 1, padding: 14, borderRadius: 14, border: 'none', cursor: 'pointer', background: '#F0F0F4', color: '#3A3A42', fontWeight: 800, fontSize: 14.5 }}>
+                      Voltar
+                    </button>
+                    <button onClick={enviarProposta} disabled={busy || !podeCompensar}
+                      style={{
+                        flex: 1.4, padding: 14, borderRadius: 14, border: 'none',
+                        cursor: busy || !podeCompensar ? 'default' : 'pointer',
+                        opacity: podeCompensar ? 1 : .5,
+                        background: 'linear-gradient(135deg,#FF5436,#FF8A3D)', color: '#fff', fontWeight: 800, fontSize: 14.5,
+                      }}>
+                      {busy ? 'Enviando...' : 'Enviar proposta'}
+                    </button>
+                  </div>
+                </>
+              )
+            })()}
+          </div>
+        </div>
+      )}
+
       {/* Sheet de confirmação */}
       {action && (
         <div
@@ -230,17 +346,7 @@ export default function SettleUpPage() {
           style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
         >
           <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: 480 }}>
-            {action.kind === 'propor' ? (
-              <>
-                <SheetIcon bg="#FFF0ED">🤝</SheetIcon>
-                <SheetTitle>Compensar com {action.pessoa.name.split(' ')[0]}?</SheetTitle>
-                <SheetText>
-                  As dívidas de vocês nos dois sentidos serão quitadas.{' '}
-                  <b>{resultado(action.pessoa.saldoCents, action.pessoa.name)}</b>{' '}
-                  {action.pessoa.name.split(' ')[0]} precisa confirmar.
-                </SheetText>
-              </>
-            ) : action.kind === 'confirmar' ? (
+            {action.kind === 'confirmar' ? (
               <>
                 <SheetIcon bg="#E9F9F0">✅</SheetIcon>
                 <SheetTitle>Confirmar compensação?</SheetTitle>
@@ -266,16 +372,10 @@ export default function SettleUpPage() {
               <button onClick={runAction} disabled={busy}
                 style={{
                   flex: 1.4, padding: 14, borderRadius: 14, border: 'none', cursor: 'pointer',
-                  background:
-                    action.kind === 'confirmar' ? '#11A36B'
-                    : action.kind === 'rejeitar' ? '#E5484D'
-                    : 'linear-gradient(135deg,#FF5436,#FF8A3D)',
+                  background: action.kind === 'confirmar' ? '#11A36B' : '#E5484D',
                   color: '#fff', fontWeight: 800, fontSize: 14.5,
                 }}>
-                {busy ? 'Enviando...'
-                  : action.kind === 'confirmar' ? 'Confirmar'
-                  : action.kind === 'rejeitar' ? 'Recusar'
-                  : 'Enviar proposta'}
+                {busy ? 'Enviando...' : action.kind === 'confirmar' ? 'Confirmar' : 'Recusar'}
               </button>
             </div>
           </div>
@@ -321,13 +421,13 @@ function Avatar({ id, name }: { id: string; name: string }) {
 }
 
 /** Card de par compensável: mostra o resultado líquido e o CTA de propor. */
-function CompensarCard({ p, onAction, onDetalhe }: { p: AcertoPessoa; onAction: () => void; onDetalhe: () => void }) {
+function CompensarCard({ p, onAction }: { p: AcertoPessoa; onAction: () => void }) {
   const positivo = p.saldoCents > 0
   const zerado = p.saldoCents === 0
   const first = p.name.split(' ')[0]
   const resumo = zerado
     ? 'Zera tudo entre vocês'
-    : positivo ? `Sobra ${first} te devendo` : 'Sobra você devendo'
+    : positivo ? `${first.charAt(0).toUpperCase() + first.slice(1).toLowerCase()} ainda te deverá` : 'Você ficará devendo'
   const cor = zerado ? '#0E8F5C' : positivo ? '#0E8F5C' : '#FF5436'
 
   return (
@@ -340,7 +440,6 @@ function CompensarCard({ p, onAction, onDetalhe }: { p: AcertoPessoa; onAction: 
           </div>
           <div style={{ fontSize: 12, color: '#6B6B76', marginTop: 1 }}>Vocês se devem</div>
         </div>
-        <DetalheLink onClick={onDetalhe} />
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, padding: '10px 12px', background: '#FAFAFC', borderRadius: 12 }}>
@@ -443,6 +542,47 @@ function DetalheGrupo({ titulo, itens, total, cor }: { titulo: string; itens: Ac
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+function SelecaoGrupo({ titulo, itens, cor, marcadas, onToggle }: {
+  titulo: string; itens: AcertoItem[]; cor: string; marcadas: Set<string>; onToggle: (id: string) => void
+}) {
+  if (itens.length === 0) return null
+  return (
+    <div style={{ marginTop: 18 }}>
+      <div style={{ fontWeight: 700, fontSize: 13, color: '#15151A', marginBottom: 8 }}>{titulo}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {itens.map((i) => {
+          const on = marcadas.has(i.id)
+          return (
+            <button key={i.id} type="button" onClick={() => onToggle(i.id)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 11, width: '100%', textAlign: 'left',
+                padding: '10px 12px', background: on ? '#FAFAFC' : '#fff', borderRadius: 10, cursor: 'pointer',
+                border: `1px solid ${on ? '#ECECF0' : '#F0F0F3'}`,
+              }}>
+              <span style={{
+                width: 20, height: 20, borderRadius: 6, flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: on ? cor : '#fff', border: `2px solid ${on ? cor : '#D0D0D8'}`,
+              }}>
+                {on && (
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                    <path d="M2 6.5l2.5 2.5L10 3" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontWeight: 600, fontSize: 13.5, color: on ? '#1A1A1F' : '#9A9AA4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{i.descricao}</span>
+                <span style={{ display: 'block', fontSize: 11.5, color: '#6B6B76', marginTop: 1 }}>{i.grupo}</span>
+              </span>
+              <span style={{ fontWeight: 700, fontSize: 13.5, color: on ? '#3A3A42' : '#B8B8C0', flexShrink: 0 }}>{formatCurrency(i.valorCents)}</span>
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }

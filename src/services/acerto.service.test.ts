@@ -50,8 +50,25 @@ describe('acertoService.getDetalhe', () => {
   })
 })
 
+describe('acertoService.getDetalheAcerto', () => {
+  it('busca pelo id do acerto (query acerto=)', async () => {
+    let url = ''
+    server.use(http.get(`${API}/api/acertar/detalhe/`, ({ request }) => {
+      url = request.url
+      return HttpResponse.json({
+        pessoa: { id: 2, name: 'Juan' },
+        voce_recebe: [], voce_paga: [{ id: 'b', descricao: 'Uber', grupo: 'Casa', valor_cents: 4000 }],
+        total_recebe: 0, total_paga: 4000, saldo_cents: -4000, compensavel: false,
+      })
+    }))
+    const r = await acertoService.getDetalheAcerto('acerto-1')
+    expect(new URL(url).searchParams.get('acerto')).toBe('acerto-1')
+    expect(r.vocePaga[0].descricao).toBe('Uber')
+  })
+})
+
 describe('acertoService.propor', () => {
-  it('envia para_id e retorna o id da proposta', async () => {
+  it('sem seleção envia só para_id', async () => {
     let body: Record<string, unknown> | null = null
     server.use(http.post(`${API}/api/acertar/`, async ({ request }) => {
       body = (await request.json()) as Record<string, unknown>
@@ -60,6 +77,16 @@ describe('acertoService.propor', () => {
     const id = await acertoService.propor('2')
     expect(body).toEqual({ para_id: 2 })
     expect(id).toBe('novo-id')
+  })
+
+  it('com seleção envia parcela_ids', async () => {
+    let body: Record<string, unknown> | null = null
+    server.use(http.post(`${API}/api/acertar/`, async ({ request }) => {
+      body = (await request.json()) as Record<string, unknown>
+      return HttpResponse.json({ id: 'novo-id' }, { status: 201 })
+    }))
+    await acertoService.propor('2', ['p1', 'p2'])
+    expect(body).toEqual({ para_id: 2, parcela_ids: ['p1', 'p2'] })
   })
 })
 

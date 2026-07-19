@@ -107,6 +107,18 @@ function toItem(i: ApiItem): AcertoItem {
   return { id: i.id, descricao: i.descricao, grupo: i.grupo, valorCents: i.valor_cents }
 }
 
+function mapDetalhe(data: ApiDetalhe): AcertoDetalhe {
+  return {
+    pessoa: { id: String(data.pessoa.id), name: data.pessoa.name },
+    voceRecebe: data.voce_recebe.map(toItem),
+    vocePaga: data.voce_paga.map(toItem),
+    totalRecebeCents: data.total_recebe,
+    totalPagaCents: data.total_paga,
+    saldoCents: data.saldo_cents,
+    compensavel: data.compensavel,
+  }
+}
+
 // ── Service ─────────────────────────────────────────────────────────────────────
 
 export const acertoService = {
@@ -118,27 +130,30 @@ export const acertoService = {
     }
   },
 
-  /** Itemiza a compensação com uma pessoa (as dívidas dos dois sentidos). */
+  /** Itemiza as dívidas candidatas com uma pessoa (as dívidas dos dois sentidos). */
   async getDetalhe(pessoaId: string): Promise<AcertoDetalhe> {
     const { data } = await api.get<ApiDetalhe>('/api/acertar/detalhe/', {
       params: { pessoa: Number(pessoaId) },
     })
-    return {
-      pessoa: { id: String(data.pessoa.id), name: data.pessoa.name },
-      voceRecebe: data.voce_recebe.map(toItem),
-      vocePaga: data.voce_paga.map(toItem),
-      totalRecebeCents: data.total_recebe,
-      totalPagaCents: data.total_paga,
-      saldoCents: data.saldo_cents,
-      compensavel: data.compensavel,
-    }
+    return mapDetalhe(data)
   },
 
-  /** Propõe uma compensação com `paraId`. Retorna o id da proposta criada. */
-  async propor(paraId: string): Promise<string> {
-    const { data } = await api.post<{ id: string }>('/api/acertar/', {
-      para_id: Number(paraId),
+  /** Itemiza as dívidas selecionadas numa proposta específica. */
+  async getDetalheAcerto(acertoId: string): Promise<AcertoDetalhe> {
+    const { data } = await api.get<ApiDetalhe>('/api/acertar/detalhe/', {
+      params: { acerto: acertoId },
     })
+    return mapDetalhe(data)
+  },
+
+  /**
+   * Propõe uma compensação com `paraId`, abatendo as parcelas `parcelaIds`
+   * (omitido = todas as candidatas). Retorna o id da proposta criada.
+   */
+  async propor(paraId: string, parcelaIds?: string[]): Promise<string> {
+    const body: Record<string, unknown> = { para_id: Number(paraId) }
+    if (parcelaIds) body.parcela_ids = parcelaIds
+    const { data } = await api.post<{ id: string }>('/api/acertar/', body)
     return data.id
   },
 

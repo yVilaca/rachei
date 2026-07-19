@@ -139,7 +139,11 @@ export default function DashboardPage() {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: 14.5, color: '#1A1A1F' }}>Acertar contas</div>
               <div style={{ fontSize: 12, color: '#6B6B76', marginTop: 1 }}>
-                {totalAPagar > 0 ? `Você deve ${formatCurrency(totalAPagar)} no total` : 'Quite dívidas de uma vez'}
+                {net < 0
+                  ? `Saldo consolidado: você deve ${formatCurrency(-net)}`
+                  : net > 0
+                  ? `Saldo consolidado: te devem ${formatCurrency(net)}`
+                  : 'Tudo quitado — nada a acertar'}
               </div>
             </div>
             <svg width="8" height="14" viewBox="0 0 8 14" fill="none">

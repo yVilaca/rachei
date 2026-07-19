@@ -49,12 +49,26 @@ export default function DebtDetailPage() {
   }
 
   const isCreditor = debt.paidBy.id === currentUser.id
-  const myInstallment = debt.installments.find(
+  // O usuário pode ter mais de uma parcela nesta dívida (ex.: parte quitada por
+  // compensação + resíduo a pagar). A parcela "ativa" é a que ainda exige ação.
+  const myInstallments = debt.installments.filter(
     (i) => i.debtor.id === currentUser.id && debt.paidBy.id !== currentUser.id,
   )
+  const active =
+    myInstallments.find((i) => i.status === 'pending') ??
+    myInstallments.find((i) => i.status === 'awaiting_confirmation') ??
+    myInstallments.find((i) => i.status === 'paid')
 
-  if (!isCreditor && myInstallment) {
-    return <DebtorView debt={debt} installment={myInstallment} currentUser={currentUser} onRefresh={load} />
+  if (!isCreditor && active) {
+    return (
+      <DebtorView
+        debt={debt}
+        installment={active}
+        myInstallments={myInstallments}
+        currentUser={currentUser}
+        onRefresh={load}
+      />
+    )
   }
 
   return <CreditorView debt={debt} currentUser={currentUser} onRefresh={load} />
@@ -264,9 +278,10 @@ function CreditorView({ debt, currentUser, onRefresh }: { debt: Debt; currentUse
 // ── DebtorView ─────────────────────────────────────────────────────────────────
 
 function DebtorView({
-  debt, installment, currentUser, onRefresh,
+  debt, installment, myInstallments, currentUser, onRefresh,
 }: {
-  debt: Debt; installment: Installment; currentUser: { id: string; name: string }; onRefresh: () => void
+  debt: Debt; installment: Installment; myInstallments: Installment[]
+  currentUser: { id: string; name: string }; onRefresh: () => void
 }) {
   const navigate = useNavigate()
   const { message: toastMsg, show: showToast } = useToast()
@@ -287,6 +302,14 @@ function DebtorView({
   const isPending = status === 'pending'
   const isAwaiting = status === 'awaiting_confirmation'
   const isPaid = status === 'paid'
+
+  // Parte já abatida por compensação (detalhe, não destaque) e sua parte total.
+  const compensadoCents = myInstallments
+    .filter((i) => i.status === 'paid' && i.paidVia === 'compensation')
+    .reduce((a, i) => a + i.amountCents, 0)
+  const suaParteCents = myInstallments.reduce((a, i) => a + i.amountCents, 0)
+  // Valor em destaque: o que ainda exige ação; se tudo quitado, a parte total.
+  const destaqueCents = isPaid ? suaParteCents : installment.amountCents
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -335,16 +358,23 @@ function DebtorView({
           marginBottom: 14,
         }}>
           <div style={{ fontSize: 13, color: '#6B6B76', fontWeight: 600, marginBottom: 6 }}>
-            {isPaid ? 'Você pagou' : 'Você deve'}
+            {isPaid ? 'Você pagou' : isAwaiting ? 'Aguardando confirmação' : 'Você deve'}
           </div>
           <div style={{
             fontFamily: '"Bricolage Grotesque"', fontWeight: 800,
             fontSize: 42, letterSpacing: '-.02em',
             color: isPaid ? '#0E8F5C' : '#FF5436',
-            lineHeight: 1.05, marginBottom: 16,
+            lineHeight: 1.05, marginBottom: compensadoCents > 0 ? 8 : 16,
           }}>
-            {formatCurrency(installment.amountCents)}
+            {formatCurrency(destaqueCents)}
           </div>
+          {compensadoCents > 0 && (
+            <div style={{ fontSize: 12, color: '#6B6B76', marginBottom: 16 }}>
+              {isPaid
+                ? `Inclui ${formatCurrency(compensadoCents)} abatidos por compensação`
+                : `${formatCurrency(compensadoCents)} já abatidos por compensação`}
+            </div>
+          )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{
               width: 36, height: 36, borderRadius: '50%',
@@ -423,6 +453,24 @@ function DebtorView({
         )}
 
 
+        {isAwaiting && (
+          <div style={{
+            background: '#FFF8EE', border: '1px solid #FCE6C0',
+            borderRadius: 16, padding: '16px 18px', marginBottom: 14,
+            display: 'flex', alignItems: 'flex-start', gap: 12,
+          }}>
+            <span style={{ fontSize: 22, lineHeight: 1 }}>⏳</span>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#B57400' }}>
+                Você declarou o pagamento de {formatCurrency(installment.amountCents)}
+              </div>
+              <div style={{ fontSize: 12.5, color: '#9A7318', marginTop: 3 }}>
+                Aguardando {creditorName} confirmar o recebimento.
+              </div>
+            </div>
+          </div>
+        )}
+
         {isPaid && (
           <div style={{
             background: '#E9F9F0', border: '1px solid #BEE9D2',
@@ -431,10 +479,10 @@ function DebtorView({
           }}>
             <span style={{ fontSize: 22, lineHeight: 1 }}>✅</span>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#0E8F5C' }}>Pagamento confirmado!</div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#0E8F5C' }}>Tudo quitado!</div>
               <div style={{ fontSize: 12.5, color: '#3BA877', marginTop: 3 }}>
-                {creditorName} confirmou o recebimento.
-                {installment.confirmedAt ? ` Em ${formatDate(installment.confirmedAt)}.` : ''}
+                Sua parte desta dívida está totalmente quitada
+                {compensadoCents > 0 ? ' (pagamento + compensação)' : ''}.
               </div>
             </div>
           </div>
@@ -452,7 +500,10 @@ function DebtorView({
             ['Data', formatDate(debt.createdAt)],
             ['Divisão', debt.splitType === 'equal' ? 'Igualitária' : 'Personalizada'],
             ['Total da despesa', formatCurrency(debt.totalAmountCents)],
-            ['Sua parte', formatCurrency(installment.amountCents)],
+            ['Sua parte', formatCurrency(suaParteCents)],
+            ...(compensadoCents > 0
+              ? [['Abatido por compensação', formatCurrency(compensadoCents)]] as [string, string][]
+              : []),
           ] as [string, string][]).map(([label, value], i, arr) => (
             <div key={label} style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -571,11 +622,12 @@ interface CICardProps {
 function CreditorInstallmentCard({ installment, isOwn, onCharge, onConfirm, onReject }: CICardProps) {
   const av = avatarFor(installment.debtor.id)
   const { status } = installment
+  const porCompensacao = status === 'paid' && installment.paidVia === 'compensation'
 
   const statusMap = {
     pending: { label: 'Pendente', color: '#FF5436', sub: 'Aguardando pagamento' },
     awaiting_confirmation: { label: 'Aguardando', color: '#B57400', sub: 'Comprovante enviado' },
-    paid: { label: 'Pago', color: '#0E8F5C', sub: 'Quitado' },
+    paid: { label: 'Pago', color: '#0E8F5C', sub: porCompensacao ? 'Quitado por compensação' : 'Quitado' },
   } as const
 
   const st = statusMap[status as keyof typeof statusMap] ?? statusMap.pending
@@ -639,7 +691,7 @@ function CreditorInstallmentCard({ installment, isOwn, onCharge, onConfirm, onRe
           background: '#E9F9F0', color: '#0E8F5C',
           fontWeight: 700, fontSize: 12.5, padding: 10, borderRadius: 12,
         }}>
-          ✓ Pagamento confirmado
+          {porCompensacao ? '✓ Quitado por compensação' : '✓ Pagamento confirmado'}
         </div>
       )}
     </div>

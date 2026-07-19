@@ -70,11 +70,15 @@ export interface Debt {
   editavel?: boolean
 }
 
+export type PaidVia = 'payment' | 'compensation'
+
 export interface Installment {
   id: string
   debtor: UserMin
   amountCents: number
   status: InstallmentStatus
+  /** Como foi quitada: pagamento normal ou compensação de dívidas. */
+  paidVia?: PaidVia
   paidAt?: string
   confirmedAt?: string
   proof?: { id: string; fileUrl: string; uploadedAt: string }

@@ -16,6 +16,7 @@ interface ApiParcelaBalance {
 }
 
 interface ApiParcelaDetail extends ApiParcelaBalance {
+  paid_via?: 'payment' | 'compensation'
   paid_at: string | null
   confirmed_at: string | null
   comprovante: { id: string; file_url: string; uploaded_at: string } | null
@@ -44,6 +45,7 @@ function toInstallment(raw: ApiParcelaBalance | ApiParcelaDetail): Installment {
     debtor: { id: String(raw.debtor.id), name: raw.debtor.name },
     amountCents: raw.amount_cents,
     status: raw.status,
+    paidVia: detail.paid_via ?? undefined,
     paidAt: detail.paid_at ?? undefined,
     confirmedAt: detail.confirmed_at ?? undefined,
     proof: detail.comprovante

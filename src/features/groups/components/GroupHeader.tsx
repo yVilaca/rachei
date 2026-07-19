@@ -26,9 +26,9 @@ export default function GroupHeader({ group, groupBalance }: GroupHeaderProps) {
 
   return (
     <div style={{ padding: '52px 20px 0' }}>
-      {/* Back */}
+      {/* Back — sempe volta para a lista de grupos (hierarquia previsível) */}
       <button
-        onClick={() => navigate(-1)}
+        onClick={() => navigate('/grupos')}
         style={{
           display: 'inline-flex', alignItems: 'center', gap: 5,
           color: '#6B6B76', fontWeight: 700, fontSize: 14,

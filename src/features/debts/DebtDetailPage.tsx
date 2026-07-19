@@ -118,7 +118,7 @@ function CreditorView({ debt, currentUser, onRefresh }: { debt: Debt; currentUse
       <Toast message={toastMsg} />
       <div style={{ background: 'linear-gradient(150deg,#FF5436,#FF8A3D)', padding: '52px 20px 26px', color: '#fff' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <button onClick={() => navigate(-1)} style={{
+          <button onClick={() => navigate(`/grupos/${debt.groupId}`)} style={{
             display: 'inline-flex', alignItems: 'center', gap: 5,
             fontWeight: 700, fontSize: 14, color: '#fff', background: 'none',
             border: 'none', cursor: 'pointer', opacity: .95,
@@ -310,7 +310,7 @@ function DebtorView({
     <div style={{ minHeight: '100dvh', background: '#F5F5F8', fontFamily: '"Plus Jakarta Sans", sans-serif', paddingBottom: 120 }}>
       <Toast message={toastMsg} />
       <div style={{ background: '#fff', padding: '52px 20px 18px', borderBottom: '1px solid #EEEEF2' }}>
-        <button onClick={() => navigate(-1)} style={{
+        <button onClick={() => navigate(`/grupos/${debt.groupId}`)} style={{
           display: 'inline-flex', alignItems: 'center', gap: 5,
           fontWeight: 700, fontSize: 14, color: '#6B6B76', background: 'none',
           border: 'none', cursor: 'pointer', marginBottom: 14,

@@ -29,7 +29,7 @@ export default function EditDebtPage() {
         padding: '18px 20px 8px',
       }}>
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate(`/dividas/${id}`)}
           style={{ fontWeight: 700, fontSize: 14.5, color: '#8A8A93', background: 'none', border: 'none', cursor: 'pointer' }}
         >
           Cancelar

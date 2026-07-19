@@ -148,7 +148,7 @@ export default function GroupPage() {
       <div style={{ display: 'flex', minHeight: '100dvh', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: 20 }}>
         <p style={{ color: '#6B6B76', fontSize: 14 }}>{error ?? 'Grupo não encontrado'}</p>
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/grupos')}
           style={{ color: '#FF5436', fontWeight: 700, fontSize: 14, background: 'none', border: 'none', cursor: 'pointer' }}
         >
           Voltar

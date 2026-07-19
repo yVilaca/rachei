@@ -18,7 +18,7 @@ export default function NewDebtPage() {
         }}
       >
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate(`/grupos/${id}`)}
           style={{ fontWeight: 700, fontSize: 14.5, color: '#8A8A93', background: 'none', border: 'none', cursor: 'pointer' }}
         >
           Cancelar

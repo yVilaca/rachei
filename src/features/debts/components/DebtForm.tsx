@@ -158,10 +158,11 @@ export default function DebtForm({ groupId, debt }: DebtFormProps) {
             ? { description }
             : { description, totalAmountCents: amountCents, splitType, debtors },
         )
-        navigate(`/dividas/${debt!.id}`)
+        // replace: remove o formulário do histórico (Voltar não volta pra ele)
+        navigate(`/dividas/${debt!.id}`, { replace: true })
       } else {
         await debtService.createDebt({ groupId, description, totalAmountCents: amountCents, splitType, debtors })
-        navigate(`/grupos/${groupId}`)
+        navigate(`/grupos/${groupId}`, { replace: true })
       }
     } catch {
       showToast(isEdit ? 'Erro ao salvar. Tente novamente.' : 'Erro ao registrar dívida. Tente novamente.')

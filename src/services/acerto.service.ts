@@ -3,9 +3,11 @@ import api from '../lib/api'
 
 /** Lançado quando já existe uma proposta da outra pessoa para você (HTTP 409). */
 export class NegociacaoExistenteError extends Error {
-  constructor(public acertoId: string) {
+  acertoId: string
+  constructor(acertoId: string) {
     super('Já existe uma negociação para esta dívida.')
     this.name = 'NegociacaoExistenteError'
+    this.acertoId = acertoId
   }
 }
 

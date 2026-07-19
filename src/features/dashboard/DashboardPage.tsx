@@ -7,6 +7,7 @@ import { useToast } from '../../hooks/useToast'
 import Toast from '../../components/Toast'
 import { dashboardService, type BalanceEntry, type CreditItem, type DashboardData, type OwedItem } from '../../services/dashboard.service'
 import { debtService } from '../../services/debt.service'
+import { acertoService } from '../../services/acerto.service'
 
 const EMOJI_BG: Record<string, string> = {
   '🏖️': '#FFF0ED', '🏠': '#EDF4FF', '🍕': '#FFF8EC', '🎮': '#F0EDFF', '✈️': '#EDF4FF',
@@ -20,12 +21,16 @@ export default function DashboardPage() {
 
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [temAcerto, setTemAcerto] = useState(false)
 
   useEffect(() => {
     let cancelled = false
     dashboardService.get()
       .then((d) => { if (!cancelled) { setData(d); setLoading(false) } })
       .catch(() => { if (!cancelled) setLoading(false) })
+    acertoService.getResumo()
+      .then((r) => { if (!cancelled) setTemAcerto(r.pessoas.length > 0 || r.aConfirmar.length > 0) })
+      .catch(() => { /* silencioso: botão só some, não é erro crítico */ })
     return () => { cancelled = true }
   }, [])
 
@@ -121,8 +126,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Acertar contas — atalho para quitar o que você deve */}
-      {!loading && (
+      {/* Acertar contas — atalho, só quando há contas a acertar */}
+      {!loading && temAcerto && (
         <div style={{ padding: '14px 20px 0' }}>
           <button
             onClick={() => navigate('/acertar')}

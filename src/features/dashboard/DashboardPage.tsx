@@ -29,7 +29,12 @@ export default function DashboardPage() {
       .then((d) => { if (!cancelled) { setData(d); setLoading(false) } })
       .catch(() => { if (!cancelled) setLoading(false) })
     acertoService.getResumo()
-      .then((r) => { if (!cancelled) setTemAcerto(r.pessoas.length > 0 || r.aConfirmar.length > 0) })
+      .then((r) => {
+        // "Acertar contas" = compensar dívidas mútuas. Só há o que acertar se
+        // existe par compensável ou uma proposta aguardando sua confirmação.
+        // Saldos sem mutualidade não são acertáveis (paga-se pela dívida).
+        if (!cancelled) setTemAcerto(r.pessoas.some((p) => p.compensavel) || r.aConfirmar.length > 0)
+      })
       .catch(() => { /* silencioso: botão só some, não é erro crítico */ })
     return () => { cancelled = true }
   }, [])

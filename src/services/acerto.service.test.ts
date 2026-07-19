@@ -25,6 +25,31 @@ describe('acertoService.getResumo', () => {
   })
 })
 
+describe('acertoService.getDetalhe', () => {
+  it('mapeia os dois sentidos, totais e saldo', async () => {
+    let url = ''
+    server.use(http.get(`${API}/api/acertar/detalhe/`, ({ request }) => {
+      url = request.url
+      return HttpResponse.json({
+        pessoa: { id: 2, name: 'Juan Silva' },
+        voce_recebe: [{ id: 'a', descricao: 'Jantar', grupo: 'Casa', valor_cents: 5000 }],
+        voce_paga: [{ id: 'b', descricao: 'Uber', grupo: 'Casa', valor_cents: 4000 }],
+        total_recebe: 5000,
+        total_paga: 4000,
+        saldo_cents: 1000,
+        compensavel: true,
+      })
+    }))
+    const r = await acertoService.getDetalhe('2')
+    expect(new URL(url).searchParams.get('pessoa')).toBe('2')
+    expect(r.pessoa).toEqual({ id: '2', name: 'Juan Silva' })
+    expect(r.voceRecebe[0]).toEqual({ id: 'a', descricao: 'Jantar', grupo: 'Casa', valorCents: 5000 })
+    expect(r.vocePaga[0]).toEqual({ id: 'b', descricao: 'Uber', grupo: 'Casa', valorCents: 4000 })
+    expect(r.saldoCents).toBe(1000)
+    expect(r.compensavel).toBe(true)
+  })
+})
+
 describe('acertoService.propor', () => {
   it('envia para_id e retorna o id da proposta', async () => {
     let body: Record<string, unknown> | null = null

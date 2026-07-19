@@ -29,6 +29,25 @@ export interface AcertoResumo {
   aConfirmar: AcertoAConfirmar[]
 }
 
+export interface AcertoItem {
+  id: string
+  descricao: string
+  grupo: string
+  valorCents: number
+}
+
+export interface AcertoDetalhe {
+  pessoa: { id: string; name: string }
+  /** Dívidas que a pessoa tem com você. */
+  voceRecebe: AcertoItem[]
+  /** Dívidas que você tem com a pessoa. */
+  vocePaga: AcertoItem[]
+  totalRecebeCents: number
+  totalPagaCents: number
+  saldoCents: number
+  compensavel: boolean
+}
+
 // ── Brutos (snake_case) ────────────────────────────────────────────────────────
 
 interface ApiPessoa {
@@ -49,6 +68,23 @@ interface ApiResumo {
   a_confirmar: ApiAConfirmar[]
 }
 
+interface ApiItem {
+  id: string
+  descricao: string
+  grupo: string
+  valor_cents: number
+}
+
+interface ApiDetalhe {
+  pessoa: { id: number; name: string }
+  voce_recebe: ApiItem[]
+  voce_paga: ApiItem[]
+  total_recebe: number
+  total_paga: number
+  saldo_cents: number
+  compensavel: boolean
+}
+
 function toPessoa(i: ApiPessoa): AcertoPessoa {
   return {
     id: String(i.pessoa.id),
@@ -67,6 +103,10 @@ function toAConfirmar(i: ApiAConfirmar): AcertoAConfirmar {
   }
 }
 
+function toItem(i: ApiItem): AcertoItem {
+  return { id: i.id, descricao: i.descricao, grupo: i.grupo, valorCents: i.valor_cents }
+}
+
 // ── Service ─────────────────────────────────────────────────────────────────────
 
 export const acertoService = {
@@ -75,6 +115,22 @@ export const acertoService = {
     return {
       pessoas: data.pessoas.map(toPessoa),
       aConfirmar: data.a_confirmar.map(toAConfirmar),
+    }
+  },
+
+  /** Itemiza a compensação com uma pessoa (as dívidas dos dois sentidos). */
+  async getDetalhe(pessoaId: string): Promise<AcertoDetalhe> {
+    const { data } = await api.get<ApiDetalhe>('/api/acertar/detalhe/', {
+      params: { pessoa: Number(pessoaId) },
+    })
+    return {
+      pessoa: { id: String(data.pessoa.id), name: data.pessoa.name },
+      voceRecebe: data.voce_recebe.map(toItem),
+      vocePaga: data.voce_paga.map(toItem),
+      totalRecebeCents: data.total_recebe,
+      totalPagaCents: data.total_paga,
+      saldoCents: data.saldo_cents,
+      compensavel: data.compensavel,
     }
   },
 

@@ -9,6 +9,8 @@ import {
   type AcertoPessoa,
   type AcertoAConfirmar,
   type AcertoResumo,
+  type AcertoDetalhe,
+  type AcertoItem,
 } from '../../services/acerto.service'
 
 type Action =
@@ -33,6 +35,19 @@ export default function SettleUpPage() {
   const [error, setError] = useState(false)
   const [action, setAction] = useState<Action>(null)
   const [busy, setBusy] = useState(false)
+  const [detalhe, setDetalhe] = useState<AcertoDetalhe | null>(null)
+  const [detalheLoading, setDetalheLoading] = useState(false)
+
+  const openDetalhe = async (pessoaId: string) => {
+    setDetalheLoading(true)
+    try {
+      setDetalhe(await acertoService.getDetalhe(pessoaId))
+    } catch {
+      showToast('Não foi possível carregar o detalhamento.')
+    } finally {
+      setDetalheLoading(false)
+    }
+  }
 
   const load = async () => {
     try {
@@ -119,6 +134,7 @@ export default function SettleUpPage() {
                       item={item}
                       onConfirm={() => setAction({ kind: 'confirmar', item })}
                       onReject={() => setAction({ kind: 'rejeitar', item })}
+                      onDetalhe={() => openDetalhe(item.de.id)}
                     />
                   ))}
                 </div>
@@ -135,6 +151,7 @@ export default function SettleUpPage() {
                       key={p.id}
                       p={p}
                       onAction={() => setAction({ kind: 'propor', pessoa: p })}
+                      onDetalhe={() => openDetalhe(p.id)}
                     />
                   ))}
                 </div>
@@ -159,6 +176,53 @@ export default function SettleUpPage() {
 
       <Toast message={toastMsg} />
 
+      {/* Sheet de detalhamento */}
+      {(detalhe || detalheLoading) && (
+        <div
+          onClick={() => { setDetalhe(null) }}
+          style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: 480, maxHeight: '82dvh', overflowY: 'auto' }}>
+            {detalheLoading || !detalhe ? (
+              <div style={{ padding: '30px 0', textAlign: 'center', color: '#6B6B76', fontSize: 14 }}>Carregando…</div>
+            ) : (
+              <>
+                <SheetTitle>Detalhes da compensação</SheetTitle>
+                <SheetText>Dívidas entre você e {detalhe.pessoa.name.split(' ')[0]} que entram no acerto.</SheetText>
+
+                <DetalheGrupo
+                  titulo={`${detalhe.pessoa.name.split(' ')[0]} deve a você`}
+                  itens={detalhe.voceRecebe}
+                  total={detalhe.totalRecebeCents}
+                  cor="#0E8F5C"
+                />
+                <DetalheGrupo
+                  titulo={`Você deve a ${detalhe.pessoa.name.split(' ')[0]}`}
+                  itens={detalhe.vocePaga}
+                  total={detalhe.totalPagaCents}
+                  cor="#FF5436"
+                />
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, padding: '14px 16px', background: '#FAFAFC', borderRadius: 14 }}>
+                  <span style={{ fontWeight: 800, fontSize: 14, color: '#15151A' }}>Depois de compensar</span>
+                  <span style={{ fontWeight: 800, fontSize: 16, color: detalhe.saldoCents === 0 ? '#0E8F5C' : detalhe.saldoCents > 0 ? '#0E8F5C' : '#FF5436' }}>
+                    {formatCurrency(Math.abs(detalhe.saldoCents))}
+                  </span>
+                </div>
+                <div style={{ fontSize: 12.5, color: '#6B6B76', marginTop: 8, lineHeight: 1.5, textAlign: 'center' }}>
+                  {resultado(detalhe.saldoCents, detalhe.pessoa.name)}
+                </div>
+
+                <button onClick={() => setDetalhe(null)}
+                  style={{ width: '100%', marginTop: 18, padding: 14, borderRadius: 14, border: 'none', cursor: 'pointer', background: '#F0F0F4', color: '#3A3A42', fontWeight: 800, fontSize: 14.5 }}>
+                  Fechar
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Sheet de confirmação */}
       {action && (
         <div
@@ -168,7 +232,7 @@ export default function SettleUpPage() {
           <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: 480 }}>
             {action.kind === 'propor' ? (
               <>
-                <SheetIcon bg="#FFF0ED">🔄</SheetIcon>
+                <SheetIcon bg="#FFF0ED">🤝</SheetIcon>
                 <SheetTitle>Compensar com {action.pessoa.name.split(' ')[0]}?</SheetTitle>
                 <SheetText>
                   As dívidas de vocês nos dois sentidos serão quitadas.{' '}
@@ -231,6 +295,18 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   )
 }
 
+function DetalheLink({ onClick }: { onClick: () => void }) {
+  return (
+    <button onClick={onClick}
+      style={{
+        background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0,
+        color: '#FF5436', fontWeight: 700, fontSize: 12.5, padding: '4px 2px',
+      }}>
+      Detalhes
+    </button>
+  )
+}
+
 function Avatar({ id, name }: { id: string; name: string }) {
   const av = avatarFor(id)
   return (
@@ -245,7 +321,7 @@ function Avatar({ id, name }: { id: string; name: string }) {
 }
 
 /** Card de par compensável: mostra o resultado líquido e o CTA de propor. */
-function CompensarCard({ p, onAction }: { p: AcertoPessoa; onAction: () => void }) {
+function CompensarCard({ p, onAction, onDetalhe }: { p: AcertoPessoa; onAction: () => void; onDetalhe: () => void }) {
   const positivo = p.saldoCents > 0
   const zerado = p.saldoCents === 0
   const first = p.name.split(' ')[0]
@@ -264,6 +340,7 @@ function CompensarCard({ p, onAction }: { p: AcertoPessoa; onAction: () => void 
           </div>
           <div style={{ fontSize: 12, color: '#6B6B76', marginTop: 1 }}>Vocês se devem</div>
         </div>
+        <DetalheLink onClick={onDetalhe} />
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, padding: '10px 12px', background: '#FAFAFC', borderRadius: 12 }}>
@@ -282,9 +359,8 @@ function CompensarCard({ p, onAction }: { p: AcertoPessoa; onAction: () => void 
           style={{
             width: '100%', marginTop: 12, padding: 13, borderRadius: 12, border: 'none', cursor: 'pointer',
             background: 'linear-gradient(135deg,#FF5436,#FF8A3D)', color: '#fff', fontWeight: 800, fontSize: 14.5,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
           }}>
-          🔄 Compensar
+          Compensar
         </button>
       )}
     </div>
@@ -292,7 +368,7 @@ function CompensarCard({ p, onAction }: { p: AcertoPessoa; onAction: () => void 
 }
 
 /** Card de proposta recebida: confirmar ou recusar. */
-function ConfirmCard({ item, onConfirm, onReject }: { item: AcertoAConfirmar; onConfirm: () => void; onReject: () => void }) {
+function ConfirmCard({ item, onConfirm, onReject, onDetalhe }: { item: AcertoAConfirmar; onConfirm: () => void; onReject: () => void; onDetalhe: () => void }) {
   return (
     <div style={{ background: '#fff', borderRadius: 16, padding: 14, boxShadow: '0 2px 10px rgba(0,0,0,.04)', border: '1px solid #E9F9F0' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -303,6 +379,7 @@ function ConfirmCard({ item, onConfirm, onReject }: { item: AcertoAConfirmar; on
           </div>
           <div style={{ fontSize: 12, color: '#6B6B76', marginTop: 1 }}>Propôs uma compensação</div>
         </div>
+        <DetalheLink onClick={onDetalhe} />
       </div>
 
       <div style={{ marginTop: 12, padding: '10px 12px', background: '#FAFAFC', borderRadius: 12, fontSize: 12.5, color: '#3A3A42' }}>
@@ -340,6 +417,32 @@ function InfoRow({ p }: { p: AcertoPessoa }) {
       <div style={{ fontWeight: 800, fontSize: 15, color: positivo ? '#0E8F5C' : '#FF5436', flexShrink: 0 }}>
         {formatCurrency(Math.abs(p.saldoCents))}
       </div>
+    </div>
+  )
+}
+
+function DetalheGrupo({ titulo, itens, total, cor }: { titulo: string; itens: AcertoItem[]; total: number; cor: string }) {
+  return (
+    <div style={{ marginTop: 18 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <span style={{ fontWeight: 700, fontSize: 13, color: '#15151A' }}>{titulo}</span>
+        <span style={{ fontWeight: 800, fontSize: 13.5, color: cor }}>{formatCurrency(total)}</span>
+      </div>
+      {itens.length === 0 ? (
+        <div style={{ fontSize: 12.5, color: '#9A9AA4', padding: '8px 0' }}>Nada neste sentido.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {itens.map((i) => (
+            <div key={i.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: '#FAFAFC', borderRadius: 10 }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 13.5, color: '#1A1A1F', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{i.descricao}</div>
+                <div style={{ fontSize: 11.5, color: '#6B6B76', marginTop: 1 }}>{i.grupo}</div>
+              </div>
+              <span style={{ fontWeight: 700, fontSize: 13.5, color: '#3A3A42', flexShrink: 0, marginLeft: 10 }}>{formatCurrency(i.valorCents)}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

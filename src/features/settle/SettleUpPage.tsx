@@ -86,18 +86,24 @@ export default function SettleUpPage() {
     })
   }
 
-  const load = async () => {
-    try {
-      setError(false)
-      setData(await acertoService.getResumo())
-    } catch {
-      setError(true)
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Refresh reativo: handlers chamam reload() e o efeito refaz o fetch.
+  const [reloadKey, setReloadKey] = useState(0)
+  const reload = () => setReloadKey((k) => k + 1)
 
-  useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const resumo = await acertoService.getResumo()
+        if (!cancelled) { setError(false); setData(resumo) }
+      } catch {
+        if (!cancelled) setError(true)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [reloadKey])
 
   const runAction = async () => {
     if (!action || busy) return
@@ -111,7 +117,7 @@ export default function SettleUpPage() {
         showToast('Proposta recusada.')
       }
       setAction(null)
-      await load()
+      reload()
     } catch {
       showToast('Algo deu errado. Tente novamente.')
     } finally {
@@ -127,13 +133,13 @@ export default function SettleUpPage() {
       await acertoService.propor(selPessoa.id, [...marcadas])
       showToast(`Proposta enviada a ${first}`)
       closeSelecao()
-      await load()
+      reload()
     } catch (e) {
       if (e instanceof NegociacaoExistenteError) {
         // A outra pessoa já propôs — leva para revisar (aceitar/recusar) a existente.
         closeSelecao()
         showToast(`${first} já propôs uma compensação — confirme ou recuse acima.`)
-        await load()
+        reload()
       } else {
         showToast('Algo deu errado. Tente novamente.')
       }

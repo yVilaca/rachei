@@ -17,20 +17,25 @@ export default function DebtDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const load = async () => {
-    if (!id) return
-    try {
-      setError(null)
-      const d = await debtService.getDebt(id)
-      setDebt(d)
-    } catch {
-      setError('Dívida não encontrada ou sem acesso.')
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Refresh reativo: handlers chamam reload() e o efeito refaz o fetch.
+  const [reloadKey, setReloadKey] = useState(0)
+  const reload = () => setReloadKey((k) => k + 1)
 
-  useEffect(() => { load() }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!id) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const d = await debtService.getDebt(id)
+        if (!cancelled) { setError(null); setDebt(d) }
+      } catch {
+        if (!cancelled) setError('Dívida não encontrada ou sem acesso.')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [id, reloadKey])
 
   if (loading) {
     return (
@@ -66,12 +71,12 @@ export default function DebtDetailPage() {
         installment={active}
         myInstallments={myInstallments}
         currentUser={currentUser}
-        onRefresh={load}
+        onRefresh={reload}
       />
     )
   }
 
-  return <CreditorView debt={debt} currentUser={currentUser} onRefresh={load} />
+  return <CreditorView debt={debt} currentUser={currentUser} onRefresh={reload} />
 }
 
 // ── CreditorView ───────────────────────────────────────────────────────────────

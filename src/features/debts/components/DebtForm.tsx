@@ -33,12 +33,6 @@ export default function DebtForm({ groupId, debt }: DebtFormProps) {
   const [group, setGroup] = useState<GroupDetail | null>(null)
   const [loadError, setLoadError] = useState(false)
 
-  useEffect(() => {
-    groupService.getGroup(groupId)
-      .then(setGroup)
-      .catch(() => setLoadError(true))
-  }, [groupId])
-
   // Somente membros ativos com usuário real participam de dívidas
   const activeMembers = (group?.members ?? []).filter(
     (m) => m.status === 'ativo' && m.user !== null,
@@ -52,6 +46,21 @@ export default function DebtForm({ groupId, debt }: DebtFormProps) {
   const [selectedDebtors, setSelectedDebtors] = useState<string[]>([])
   const [splitType, setSplitType] = useState<SplitType>('equal')
   const [customCents, setCustomCents] = useState<Record<string, number>>({})
+
+  useEffect(() => {
+    groupService.getGroup(groupId)
+      .then((g) => {
+        setGroup(g)
+        // Modo criação: seleciona todos os membros ativos por padrão (uma vez).
+        if (!isEdit) {
+          const ativos = (g.members ?? [])
+            .filter((m) => m.status === 'ativo' && m.user !== null)
+            .map((m) => m.user!.id)
+          setSelectedDebtors((prev) => (prev.length === 0 ? ativos : prev))
+        }
+      })
+      .catch(() => setLoadError(true))
+  }, [groupId, isEdit])
 
   // Modo edição: prefill a partir da dívida (uma vez).
   const prefilled = useRef(false)
@@ -68,12 +77,6 @@ export default function DebtForm({ groupId, debt }: DebtFormProps) {
     }
   }, [debt])
 
-  // Modo criação: seleciona todos os membros ativos por padrão (uma vez).
-  useEffect(() => {
-    if (!isEdit && activeMembers.length > 0 && selectedDebtors.length === 0) {
-      setSelectedDebtors(activeMembers.map((m) => m.user!.id))
-    }
-  }, [activeMembers.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const [touchedDesc, setTouchedDesc] = useState(false)
   const [touchedAmount, setTouchedAmount] = useState(false)

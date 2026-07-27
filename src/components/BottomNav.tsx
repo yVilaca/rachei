@@ -24,7 +24,7 @@ export default function BottomNav() {
 
   // Badge de não-lidas vindo do backend; re-checa ao trocar de rota
   useEffect(() => {
-    if (!currentUser) { setUnreadCount(0); return }
+    if (!currentUser) return
     let cancelled = false
     activityService.getUnreadCount()
       .then((n) => { if (!cancelled) setUnreadCount(n) })
@@ -32,7 +32,7 @@ export default function BottomNav() {
     return () => { cancelled = true }
   }, [pathname, currentUser])
 
-  const hasUnread = unreadCount > 0
+  const hasUnread = !!currentUser && unreadCount > 0
 
   const isHome = pathname === '/dashboard'
   const isGroups = pathname === '/grupos' || pathname.startsWith('/grupos/')

@@ -107,9 +107,8 @@ export default function TwoFactorSection() {
   const [regenError, setRegenError] = useState('')
   const [isLoadingRegen, setIsLoadingRegen] = useState(false)
 
-  // Trusted devices
-  const [devices, setDevices] = useState<TrustedDevice[]>([])
-  const [loadingDevices, setLoadingDevices] = useState(false)
+  // Trusted devices — null = ainda não carregado (deriva o estado de loading).
+  const [devices, setDevices] = useState<TrustedDevice[] | null>(null)
   const [revokingId, setRevokingId] = useState<number | null>(null)
 
   const hasFetched = useRef(false)
@@ -121,22 +120,21 @@ export default function TwoFactorSection() {
   }, [])
 
   useEffect(() => {
-    if (isActive) {
-      setLoadingDevices(true)
-      twoFactorService.getTrustedDevices()
-        .then(setDevices)
-        .catch(() => setDevices([]))
-        .finally(() => setLoadingDevices(false))
-    } else {
-      setDevices([])
-    }
+    if (!isActive) return
+    let cancelled = false
+    twoFactorService.getTrustedDevices()
+      .then((d) => { if (!cancelled) setDevices(d) })
+      .catch(() => { if (!cancelled) setDevices([]) })
+    return () => { cancelled = true }
   }, [isActive])
+
+  const loadingDevices = isActive && devices === null
 
   const handleRevokeDevice = async (id: number) => {
     setRevokingId(id)
     try {
       await twoFactorService.deleteTrustedDevice(id)
-      setDevices((prev) => prev.filter((d) => d.id !== id))
+      setDevices((prev) => (prev ?? []).filter((d) => d.id !== id))
     } catch {
       // falha silenciosa — o item permanece na lista
     } finally {
@@ -478,7 +476,7 @@ export default function TwoFactorSection() {
       )}
 
       {/* Dispositivos confiáveis */}
-      {(loadingDevices || devices.length > 0) && (
+      {(loadingDevices || (devices?.length ?? 0) > 0) && (
         <div>
           <div style={{
             fontSize: 11, fontWeight: 800, color: '#6B6B76', letterSpacing: '0.06em',
@@ -490,7 +488,7 @@ export default function TwoFactorSection() {
             <p style={{ fontSize: 12.5, color: '#6B6B76' }}>Carregando…</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {devices.map((d) => (
+              {(devices ?? []).map((d) => (
                 <div
                   key={d.id}
                   style={{

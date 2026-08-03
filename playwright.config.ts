@@ -1,14 +1,18 @@
 import { defineConfig, devices } from '@playwright/test'
 
-// E2E hermético: a API é stubada no browser (page.route), sem backend rodando.
-// Sobe só o dev server do Vite e roda o Chromium headless contra ele.
+// E2E full-stack: sobe o Django REAL (settings_e2e, banco rachei_e2e descartável)
+// e o dev server do Vite, e roda o Chromium contra a stack completa.
+// Serial (workers:1) porque os testes compartilham um único banco e o resetam.
 export default defineConfig({
   testDir: './e2e',
-  timeout: 30_000,
-  fullyParallel: true,
+  timeout: 60_000,
+  workers: 1,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0,
+  retries: 1,
   reporter: 'list',
+  expect: { timeout: 10_000 },
+  globalSetup: './e2e/global-setup.ts',
   use: {
     baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',
@@ -16,10 +20,19 @@ export default defineConfig({
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
   ],
-  webServer: {
-    command: 'pnpm dev --port 5173 --strictPort',
-    url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  webServer: [
+    {
+      command: 'python manage.py runserver 8000 --noreload --settings=config.settings_e2e',
+      cwd: '../rachei-backend',
+      url: 'http://localhost:8000/health/',
+      reuseExistingServer: false,
+      timeout: 120_000,
+    },
+    {
+      command: 'pnpm dev --port 5173 --strictPort',
+      url: 'http://localhost:5173',
+      reuseExistingServer: false,
+      timeout: 120_000,
+    },
+  ],
 })

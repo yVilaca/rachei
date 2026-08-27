@@ -24,10 +24,9 @@ jobs:
       - name: Instalar dependências
         run: pnpm install --frozen-lockfile
 
-      # Lint ainda tem dívida pré-existente — reporta mas não bloqueia (ratchet).
-      - name: Lint (não-bloqueante)
+      # Gate rígido: dívida de lint zerada — qualquer erro/warning quebra o CI.
+      - name: Lint
         run: pnpm run lint
-        continue-on-error: true
 
       # Gates rígidos: o build inclui o typecheck (tsc -b) e falha o deploy se quebrar.
       - name: Typecheck + build

@@ -4,6 +4,9 @@
 # Emergência (pular): git push --no-verify
 set -e
 
+echo "pre-push: lint (eslint)..."
+pnpm run lint
+
 echo "pre-push: typecheck (tsc)..."
 pnpm exec tsc -b
 

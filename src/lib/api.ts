@@ -19,11 +19,16 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+// Endpoints em que um 401 é um erro legítimo de credencial — NÃO tentar refresh
+// (senão o login com senha errada vira um reload silencioso, sem mensagem).
+const NO_REFRESH_ON_401 = ['/api/auth/login/', '/api/auth/2fa/challenge/']
+
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
     const original = error.config
-    if (error.response?.status !== 401 || original._retry) {
+    const skipRefresh = NO_REFRESH_ON_401.some((u) => original?.url?.includes(u))
+    if (error.response?.status !== 401 || original._retry || skipRefresh) {
       return Promise.reject(error)
     }
     original._retry = true

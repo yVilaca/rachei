@@ -5,7 +5,7 @@ import { execSync } from 'node:child_process'
 // o endpoint de reset (ver e2e/support/e2e.ts).
 export default function globalSetup() {
   execSync('python manage.py migrate --noinput --settings=config.settings_e2e', {
-    cwd: '../rachei-backend',
+    cwd: process.env.BACKEND_DIR || '../rachei-backend',
     stdio: 'inherit',
   })
 }

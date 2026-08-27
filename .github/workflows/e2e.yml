@@ -1,0 +1,73 @@
+name: E2E (full-stack)
+
+# Manual por enquanto — E2E full-stack sobe Django + Postgres + Vite + Chromium.
+# É pesado e cruza dois repositórios; mantê-lo em workflow_dispatch evita
+# quebrar o CI principal até a primeira execução validar tudo.
+on:
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+
+    env:
+      # Banco/segredos do backend em modo E2E (settings_e2e usa rachei_e2e).
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: localhost
+      DB_PORT: '5432'
+      # settings.py exige TOTP_ENCRYPTION_KEY (sem fallback). Chave Fernet de teste.
+      TOTP_ENCRYPTION_KEY: 'YNqvfjrYdzvwqJQQiHQCV_-2eeWNfya4UAHsxiNdNwU='
+      SECRET_KEY: 'ci-e2e-secret'
+      # Onde o Playwright encontra o backend (ver playwright.config.ts / global-setup).
+      BACKEND_DIR: ${{ github.workspace }}/rachei-backend
+
+    steps:
+      - name: Checkout frontend
+        uses: actions/checkout@v4
+
+      # Backend é um repo separado — precisa de um PAT com acesso (secret BACKEND_REPO_TOKEN).
+      - name: Checkout backend
+        uses: actions/checkout@v4
+        with:
+          repository: yVilaca/rachei-backend
+          path: rachei-backend
+          token: ${{ secrets.BACKEND_REPO_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'pnpm' }
+
+      - name: Dependências do backend
+        working-directory: rachei-backend
+        run: pip install -r requirements.txt
+
+      - name: Criar banco de E2E + migrar
+        working-directory: rachei-backend
+        run: |
+          python -c "import psycopg2,os; c=psycopg2.connect(host='localhost',user='postgres',password='postgres',dbname='postgres'); c.autocommit=True; c.cursor().execute('CREATE DATABASE rachei_e2e'); print('rachei_e2e criado')"
+          python manage.py migrate --settings=config.settings_e2e --noinput
+
+      - name: Dependências do frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Browser do Playwright
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Rodar E2E
+        run: pnpm test:e2e

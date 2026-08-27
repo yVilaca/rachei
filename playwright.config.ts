@@ -23,7 +23,7 @@ export default defineConfig({
   webServer: [
     {
       command: 'python manage.py runserver 8000 --noreload --settings=config.settings_e2e',
-      cwd: '../rachei-backend',
+      cwd: process.env.BACKEND_DIR || '../rachei-backend',
       url: 'http://localhost:8000/health/',
       reuseExistingServer: false,
       timeout: 120_000,

@@ -9,6 +9,7 @@ export interface Fixtures {
   group: { id: string; name: string }
   debt_mercado: { id: string }
   debt_uber: { id: string }
+  charge_token: string
 }
 
 /** Zera e semeia o banco de E2E, devolvendo os ids/credenciais do cenário. */

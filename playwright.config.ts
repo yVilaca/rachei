@@ -10,12 +10,16 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: 1,
-  reporter: 'list',
+  // 'list' para stream no terminal/painel; 'html' gera playwright-report/ (relatório + trace viewer).
+  reporter: [['list'], ['html', { open: 'never' }]],
   expect: { timeout: 10_000 },
   globalSetup: './e2e/global-setup.ts',
   use: {
     baseURL: 'http://localhost:5173',
-    trace: 'on-first-retry',
+    // Artefatos para acompanhar/depurar falhas: trace navegável, vídeo e screenshot.
+    trace: 'retain-on-failure',
+    video: 'retain-on-failure',
+    screenshot: 'only-on-failure',
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },

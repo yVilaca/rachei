@@ -21,7 +21,11 @@ test('confirmação dupla: devedor declara e credor confirma', async ({ browser,
   await login(alice, fx.alice.email, fx.password)
   await alice.goto(debtUrl)
   await alice.getByRole('button', { name: 'Confirmar recebimento' }).click()
-  await expect(alice.getByText('✓ Pagamento confirmado')).toBeVisible()
+  // A dívida Mercado tem 2 parcelas (a da própria alice, já quitada por ser a
+  // pagadora, + a do bob). Após confirmar a do bob, as duas ficam confirmadas e
+  // o botão de confirmar some. Asserção sobre o estado final, sem strict-mode.
+  await expect(alice.getByRole('button', { name: 'Confirmar recebimento' })).toHaveCount(0)
+  await expect(alice.getByText('✓ Pagamento confirmado')).toHaveCount(2)
 
   await bobCtx.close()
   await aliceCtx.close()

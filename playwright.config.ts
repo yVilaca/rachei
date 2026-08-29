@@ -20,6 +20,8 @@ export default defineConfig({
     trace: 'retain-on-failure',
     video: 'retain-on-failure',
     screenshot: 'only-on-failure',
+    // PW_SLOWMO desacelera cada ação (ms) no modo "Assistir" para seguir os cliques.
+    launchOptions: { slowMo: Number(process.env.PW_SLOWMO || 0) },
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },

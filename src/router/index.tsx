@@ -1,22 +1,27 @@
+/* eslint-disable react-refresh/only-export-components -- arquivo de config de rotas, não módulo de componente */
+import { lazy } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import RootLayout from './RootLayout'
 import PrivateRoute from './PrivateRoute'
 import AppShell from './AppShell'
-import AuthPage from '../features/auth/AuthPage'
-import ForgotPasswordPage from '../features/auth/ForgotPasswordPage'
-import TwoFactorChallengePage from '../features/auth/TwoFactorChallengePage'
-import VerifyPhonePage from '../features/auth/VerifyPhonePage'
-import DashboardPage from '../features/dashboard/DashboardPage'
-import GroupPage from '../features/groups/GroupPage'
-import GroupsPage from '../features/groups/GroupsPage'
-import NewDebtPage from '../features/debts/NewDebtPage'
-import EditDebtPage from '../features/debts/EditDebtPage'
-import DebtDetailPage from '../features/debts/DebtDetailPage'
-import SettleUpPage from '../features/settle/SettleUpPage'
-import PaymentLinkPage from '../features/payment/PaymentLinkPage'
-import ProfilePage from '../features/profile/ProfilePage'
-import ActivityPage from '../features/activity/ActivityPage'
-import NotFoundPage from '../features/shared/NotFoundPage'
+
+// Páginas em chunks separados (code-splitting): login e a cobrança pública não
+// carregam mais o app autenticado inteiro. Layout/guards ficam eager.
+const AuthPage = lazy(() => import('../features/auth/AuthPage'))
+const ForgotPasswordPage = lazy(() => import('../features/auth/ForgotPasswordPage'))
+const TwoFactorChallengePage = lazy(() => import('../features/auth/TwoFactorChallengePage'))
+const VerifyPhonePage = lazy(() => import('../features/auth/VerifyPhonePage'))
+const DashboardPage = lazy(() => import('../features/dashboard/DashboardPage'))
+const GroupPage = lazy(() => import('../features/groups/GroupPage'))
+const GroupsPage = lazy(() => import('../features/groups/GroupsPage'))
+const NewDebtPage = lazy(() => import('../features/debts/NewDebtPage'))
+const EditDebtPage = lazy(() => import('../features/debts/EditDebtPage'))
+const DebtDetailPage = lazy(() => import('../features/debts/DebtDetailPage'))
+const SettleUpPage = lazy(() => import('../features/settle/SettleUpPage'))
+const PaymentLinkPage = lazy(() => import('../features/payment/PaymentLinkPage'))
+const ProfilePage = lazy(() => import('../features/profile/ProfilePage'))
+const ActivityPage = lazy(() => import('../features/activity/ActivityPage'))
+const NotFoundPage = lazy(() => import('../features/shared/NotFoundPage'))
 
 export const router = createBrowserRouter([
   {

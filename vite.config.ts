@@ -17,6 +17,8 @@ export default defineConfig({
             org: process.env.SENTRY_ORG,
             project: process.env.SENTRY_PROJECT,
             authToken: process.env.SENTRY_AUTH_TOKEN,
+            // Remove os .map do dist após subir ao Sentry: não publicar source maps.
+            sourcemaps: { filesToDeleteAfterUpload: ['**/*.map'] },
           }),
         ]
       : []),

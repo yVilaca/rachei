@@ -116,8 +116,25 @@ export const debtService = {
     await api.delete(`/api/despesas/${id}/`)
   },
 
-  async sendProof(installmentId: string, fileUrl?: string): Promise<void> {
-    await api.post(`/api/parcelas/${installmentId}/comprovante/`, fileUrl ? { file_url: fileUrl } : {})
+  async sendProof(installmentId: string, file?: File): Promise<void> {
+    if (!file) {
+      await api.post(`/api/parcelas/${installmentId}/comprovante/`, {})
+      return
+    }
+    // Upload real (multipart). Content-Type undefined → o browser define o
+    // boundary correto do multipart/form-data.
+    const form = new FormData()
+    form.append('arquivo', file)
+    await api.post(`/api/parcelas/${installmentId}/comprovante/`, form, {
+      headers: { 'Content-Type': undefined as unknown as string },
+    })
+  },
+
+  // Baixa o comprovante (endpoint autenticado) como blob e devolve um object URL
+  // para exibir/abrir — a mídia nunca é servida por URL pública.
+  async fetchProof(url: string): Promise<string> {
+    const { data } = await api.get(url, { responseType: 'blob' })
+    return URL.createObjectURL(data as Blob)
   },
 
   async confirmPayment(installmentId: string): Promise<void> {

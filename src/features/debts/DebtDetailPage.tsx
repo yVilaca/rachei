@@ -325,8 +325,7 @@ function DebtorView({
     if (sending) return
     setSending(true)
     try {
-      const fileUrl = proofFile ? URL.createObjectURL(proofFile) : undefined
-      await debtService.sendProof(installment.id, fileUrl)
+      await debtService.sendProof(installment.id, proofFile ?? undefined)
       onRefresh()
     } catch {
       showToast('Erro ao declarar pagamento.')
@@ -627,6 +626,14 @@ function CreditorInstallmentCard({ installment, isOwn, onCharge, onConfirm, onRe
   const { status } = installment
   const porCompensacao = status === 'paid' && installment.paidVia === 'compensation'
 
+  const verComprovante = async () => {
+    if (!installment.proof) return
+    try {
+      const url = await debtService.fetchProof(installment.proof.fileUrl)
+      window.open(url, '_blank', 'noopener')
+    } catch { /* silencioso: sem comprovante acessível */ }
+  }
+
   const statusMap = {
     pending: { label: 'Pendente', color: '#FF5436', sub: 'Aguardando pagamento' },
     awaiting_confirmation: { label: 'Aguardando', color: '#B57400', sub: 'Comprovante enviado' },
@@ -674,18 +681,30 @@ function CreditorInstallmentCard({ installment, isOwn, onCharge, onConfirm, onRe
       )}
 
       {status === 'awaiting_confirmation' && (
-        <div style={{ marginTop: 13, display: 'flex', gap: 8 }}>
-          <button onClick={onReject} style={{
-            flex: 1, textAlign: 'center', padding: 11, borderRadius: 12,
-            fontWeight: 800, fontSize: 13.5, background: '#FFEDE8', color: '#E0431F',
-            border: 'none', cursor: 'pointer',
-          }}>Rejeitar</button>
-          <button onClick={onConfirm} style={{
-            flex: 2, textAlign: 'center', padding: 11, borderRadius: 12,
-            fontWeight: 800, fontSize: 13.5, background: '#11A36B', color: '#fff',
-            border: 'none', cursor: 'pointer',
-          }}>Confirmar recebimento</button>
-        </div>
+        <>
+          {installment.proof && (
+            <button onClick={verComprovante} style={{
+              marginTop: 13, width: '100%', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', gap: 8, padding: 11, borderRadius: 12,
+              fontWeight: 800, fontSize: 13.5, background: '#F0F0F4', color: '#1A1A1F',
+              border: 'none', cursor: 'pointer',
+            }}>
+              📎 Ver comprovante
+            </button>
+          )}
+          <div style={{ marginTop: installment.proof ? 8 : 13, display: 'flex', gap: 8 }}>
+            <button onClick={onReject} style={{
+              flex: 1, textAlign: 'center', padding: 11, borderRadius: 12,
+              fontWeight: 800, fontSize: 13.5, background: '#FFEDE8', color: '#E0431F',
+              border: 'none', cursor: 'pointer',
+            }}>Rejeitar</button>
+            <button onClick={onConfirm} style={{
+              flex: 2, textAlign: 'center', padding: 11, borderRadius: 12,
+              fontWeight: 800, fontSize: 13.5, background: '#11A36B', color: '#fff',
+              border: 'none', cursor: 'pointer',
+            }}>Confirmar recebimento</button>
+          </div>
+        </>
       )}
 
       {status === 'paid' && (

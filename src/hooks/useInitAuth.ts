@@ -2,8 +2,9 @@ import axios from 'axios'
 import { useEffect } from 'react'
 import { useAuthStore } from '../stores/auth.store'
 import { authService } from '../services/auth.service'
+import { API_BASE_URL } from '../lib/env'
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+const BASE_URL = API_BASE_URL
 
 // Dedupe do bootstrap por carga de página. O StrictMode (dev) executa o efeito
 // duas vezes; com ROTATE_REFRESH_TOKENS + BLACKLIST, o 2º refresh usaria um token

@@ -1,7 +1,8 @@
 import * as Sentry from '@sentry/react'
+import { API_BASE_URL } from './env'
 
 const DSN = import.meta.env.VITE_SENTRY_DSN
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+const API_URL = API_BASE_URL
 
 /**
  * Inicializa o Sentry (erros + performance + session replay).

@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/auth.store'
 import LoginForm from './components/LoginForm'
 import RegisterForm from './components/RegisterForm'
+import Logo from '../../components/Logo'
 
 interface AuthPageProps {
   mode?: 'login' | 'register'
@@ -20,26 +21,9 @@ export default function AuthPage({ mode = 'login' }: AuthPageProps) {
       className="flex min-h-dvh flex-col px-6 pb-12"
       style={{ background: 'linear-gradient(170deg,#FFF1EC 0%,#F5F5F8 60%)' }}
     >
-      {/* Hero: logo orb + titles */}
+      {/* Hero: logo + titles */}
       <div className="flex flex-col items-center pt-20 text-center">
-        <div
-          style={{
-            width: 88,
-            height: 88,
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #FF5436, #FF9A3D)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 34,
-            fontWeight: 900,
-            color: '#fff',
-            boxShadow: '0 16px 40px rgba(255,84,54,0.35)',
-            fontFamily: 'Poppins, sans-serif',
-          }}
-        >
-          R
-        </div>
+        <Logo height={44} />
 
         <h1 className="mt-6 font-heading text-[2rem] font-extrabold leading-tight tracking-tight text-[#15151A]">
           {currentMode === 'login' ? 'Bem-vindo de volta!' : 'Criar sua conta'}

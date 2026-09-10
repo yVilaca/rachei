@@ -96,9 +96,9 @@ export default function ProfilePage() {
   return (
     <div
       className="no-scrollbar min-h-dvh overflow-auto"
-      style={{ background: '#F5F5F8', padding: '52px 20px 110px', fontFamily: '"Plus Jakarta Sans", sans-serif' }}
+      style={{ background: '#F5F5F8', padding: '52px 20px 110px', fontFamily: 'Poppins, sans-serif' }}
     >
-      <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 28, color: '#15151A', letterSpacing: '-0.02em', marginBottom: 20 }}>
+      <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 28, color: '#15151A', letterSpacing: '-0.02em', marginBottom: 20 }}>
         Perfil
       </div>
 
@@ -144,7 +144,7 @@ export default function ProfilePage() {
           <div style={{ display: 'inline-block', background: 'linear-gradient(135deg,#FF5436,#FFB13D)', color: '#fff', fontSize: 11, fontWeight: 800, padding: '4px 12px', borderRadius: 999, position: 'relative' }}>
             RACHEI PRO
           </div>
-          <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 21, marginTop: 14, position: 'relative' }}>
+          <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 21, marginTop: 14, position: 'relative' }}>
             Desbloqueie tudo
           </div>
           <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 9, position: 'relative' }}>
@@ -162,13 +162,13 @@ export default function ProfilePage() {
       ) : (
         <div style={{ marginTop: 16, borderRadius: 24, padding: 22, background: 'linear-gradient(140deg,#2A1A12,#4A2A18)', color: '#fff', textAlign: 'center' }}>
           <div style={{ fontSize: 34 }}>👑</div>
-          <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 20, marginTop: 8 }}>Você é Rachei Pro</div>
+          <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 20, marginTop: 8 }}>Você é Rachei Pro</div>
           <div style={{ fontSize: 13, opacity: 0.85, marginTop: 6 }}>Grupos ilimitados, WhatsApp e mais.</div>
         </div>
       )}
 
       {/* Security */}
-      <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 700, fontSize: 15, color: '#15151A', margin: '24px 2px 12px' }}>
+      <div style={{ fontFamily: 'Poppins', fontWeight: 700, fontSize: 15, color: '#15151A', margin: '24px 2px 12px' }}>
         Segurança
       </div>
       <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 2px 10px rgba(0,0,0,.04)', padding: '16px 16px' }}>
@@ -176,7 +176,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Notifications */}
-      <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 700, fontSize: 15, color: '#15151A', margin: '24px 2px 12px' }}>
+      <div style={{ fontFamily: 'Poppins', fontWeight: 700, fontSize: 15, color: '#15151A', margin: '24px 2px 12px' }}>
         Notificações
       </div>
       <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 2px 10px rgba(0,0,0,.04)', overflow: 'hidden' }}>
@@ -218,7 +218,7 @@ export default function ProfilePage() {
             onClick={(e) => e.stopPropagation()}
             style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: 480 }}
           >
-            <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 20, color: '#15151A', marginBottom: 16 }}>
+            <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 20, color: '#15151A', marginBottom: 16 }}>
               Editar perfil
             </div>
             <div style={{ fontSize: 12, fontWeight: 700, color: '#6B6B76', marginBottom: 8 }}>NOME</div>
@@ -231,7 +231,7 @@ export default function ProfilePage() {
               style={{
                 width: '100%', padding: '14px 16px', borderRadius: 14,
                 border: '2px solid #E8E8EF', fontSize: 15, color: '#1A1A1F', outline: 'none',
-                fontFamily: '"Plus Jakarta Sans", sans-serif', boxSizing: 'border-box', marginBottom: 8,
+                fontFamily: 'Poppins, sans-serif', boxSizing: 'border-box', marginBottom: 8,
               }}
             />
             <div style={{ fontSize: 12, color: '#9A9AA4', marginBottom: 20 }}>

@@ -95,10 +95,10 @@ export default function VerifyPhonePage() {
       minHeight: '100dvh', display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       background: '#F5F5F8', padding: '32px 24px',
-      fontFamily: '"Plus Jakarta Sans", sans-serif',
+      fontFamily: 'Poppins, sans-serif',
     }}>
       {/* Logo */}
-      <div style={{ fontFamily: '"Bricolage Grotesque", sans-serif', fontWeight: 800, fontSize: 28, color: '#FF5436', marginBottom: 32 }}>
+      <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: 28, color: '#FF5436', marginBottom: 32 }}>
         rachei
       </div>
 
@@ -116,7 +116,7 @@ export default function VerifyPhonePage() {
           📱
         </div>
 
-        <div style={{ fontFamily: '"Bricolage Grotesque", sans-serif', fontWeight: 800, fontSize: 22, color: '#15151A', marginBottom: 8 }}>
+        <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: 22, color: '#15151A', marginBottom: 8 }}>
           Verifique seu telefone
         </div>
         <div style={{ fontSize: 14, color: '#6B6B76', lineHeight: 1.5, marginBottom: 28 }}>
@@ -144,7 +144,7 @@ export default function VerifyPhonePage() {
                 border: `2px solid ${error ? '#FF5436' : d ? '#FF5436' : '#E8E8EF'}`,
                 borderRadius: 14, background: d ? '#FFF0ED' : '#F8F8FB',
                 outline: 'none', caretColor: '#FF5436',
-                fontFamily: '"Plus Jakarta Sans", sans-serif',
+                fontFamily: 'Poppins, sans-serif',
               }}
             />
           ))}

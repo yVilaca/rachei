@@ -117,11 +117,11 @@ export default function ActivityPage() {
   return (
     <div
       className="no-scrollbar min-h-dvh overflow-auto"
-      style={{ background: '#F5F5F8', padding: '52px 20px 110px', fontFamily: '"Plus Jakarta Sans", sans-serif' }}
+      style={{ background: '#F5F5F8', padding: '52px 20px 110px', fontFamily: 'Poppins, sans-serif' }}
     >
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
-        <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 28, color: '#15151A', letterSpacing: '-.02em' }}>
+        <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 28, color: '#15151A', letterSpacing: '-.02em' }}>
           Atividade
         </div>
         {unreadCount > 0 && (

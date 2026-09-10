@@ -133,7 +133,7 @@ function CreditorView({ debt, currentUser, onRefresh }: { debt: Debt; currentUse
   }
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#F5F5F8', fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
+    <div style={{ minHeight: '100dvh', background: '#F5F5F8', fontFamily: 'Poppins, sans-serif' }}>
       <Toast message={toastMsg} />
       <div style={{ background: 'linear-gradient(150deg,#FF5436,#FF8A3D)', padding: '52px 20px 26px', color: '#fff' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -178,7 +178,7 @@ function CreditorView({ debt, currentUser, onRefresh }: { debt: Debt; currentUse
           </div>
         </div>
         <div style={{ fontSize: 13, opacity: .9, fontWeight: 600 }}>{debt.groupName}</div>
-        <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 26, margin: '3px 0 14px', letterSpacing: '-.01em' }}>
+        <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 26, margin: '3px 0 14px', letterSpacing: '-.01em' }}>
           {debt.description}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -214,7 +214,7 @@ function CreditorView({ debt, currentUser, onRefresh }: { debt: Debt; currentUse
           <ProgressBar value={paidCount} max={debt.installments.length} />
         </div>
 
-        <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 700, fontSize: 15, color: '#15151A', marginBottom: 12 }}>
+        <div style={{ fontFamily: 'Poppins', fontWeight: 700, fontSize: 15, color: '#15151A', marginBottom: 12 }}>
           Parcelas por devedor
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -247,7 +247,7 @@ function CreditorView({ debt, currentUser, onRefresh }: { debt: Debt; currentUse
               width: 44, height: 44, borderRadius: 14, background: '#FFEDE8',
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, marginBottom: 14,
             }}>🗑️</div>
-            <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 19, color: '#15151A', marginBottom: 6 }}>
+            <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 19, color: '#15151A', marginBottom: 6 }}>
               {debt.editavel === false ? 'Não dá para excluir' : 'Excluir esta dívida?'}
             </div>
             <div style={{ fontSize: 13.5, color: '#6B6B76', lineHeight: 1.5, marginBottom: 20 }}>
@@ -334,7 +334,7 @@ function DebtorView({
   }
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#F5F5F8', fontFamily: '"Plus Jakarta Sans", sans-serif', paddingBottom: 120 }}>
+    <div style={{ minHeight: '100dvh', background: '#F5F5F8', fontFamily: 'Poppins, sans-serif', paddingBottom: 120 }}>
       <Toast message={toastMsg} />
       <div style={{ background: '#fff', padding: '52px 20px 18px', borderBottom: '1px solid #EEEEF2' }}>
         <button onClick={() => navigate(`/grupos/${debt.groupId}`)} style={{
@@ -348,7 +348,7 @@ function DebtorView({
           Voltar
         </button>
         <div style={{ fontSize: 12, color: '#6B6B76', fontWeight: 600, marginBottom: 2 }}>{debt.groupName ?? ''}</div>
-        <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 22, color: '#15151A', letterSpacing: '-.01em' }}>
+        <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 22, color: '#15151A', letterSpacing: '-.01em' }}>
           {debt.description}
         </div>
       </div>
@@ -365,7 +365,7 @@ function DebtorView({
             {isPaid ? 'Você pagou' : isAwaiting ? 'Aguardando confirmação' : 'Você deve'}
           </div>
           <div style={{
-            fontFamily: '"Bricolage Grotesque"', fontWeight: 800,
+            fontFamily: 'Poppins', fontWeight: 800,
             fontSize: 42, letterSpacing: '-.02em',
             color: isPaid ? '#0E8F5C' : '#FF5436',
             lineHeight: 1.05, marginBottom: compensadoCents > 0 ? 8 : 16,
@@ -494,7 +494,7 @@ function DebtorView({
           background: '#fff', borderRadius: 18, padding: 18,
           boxShadow: '0 2px 10px rgba(0,0,0,.04)', marginBottom: 14,
         }}>
-          <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 700, fontSize: 14, color: '#15151A', marginBottom: 14 }}>
+          <div style={{ fontFamily: 'Poppins', fontWeight: 700, fontSize: 14, color: '#15151A', marginBottom: 14 }}>
             Detalhes da dívida
           </div>
           {([
@@ -528,7 +528,7 @@ function DebtorView({
                 padding: '15px 18px', background: 'none', border: 'none', cursor: 'pointer',
               }}
             >
-              <span style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 700, fontSize: 14, color: '#15151A' }}>
+              <span style={{ fontFamily: 'Poppins', fontWeight: 700, fontSize: 14, color: '#15151A' }}>
                 Outros participantes
               </span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

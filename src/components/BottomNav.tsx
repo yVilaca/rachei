@@ -89,7 +89,7 @@ export default function BottomNav() {
             {/* Handle */}
             <div style={{ width: 40, height: 5, borderRadius: 999, background: '#E2E2E8', margin: '0 auto 20px' }} />
 
-            <p style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 18, color: '#15151A', marginBottom: 4 }}>
+            <p style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 18, color: '#15151A', marginBottom: 4 }}>
               Nova dívida
             </p>
             <p style={{ fontSize: 13, color: '#9A9AA4', marginBottom: 20 }}>

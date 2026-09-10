@@ -24,8 +24,8 @@ const config: Config = {
         border: '#ECECF0',
       },
       fontFamily: {
-        heading: ['"Bricolage Grotesque"', 'sans-serif'],
-        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+        heading: ['Poppins', 'sans-serif'],
+        sans: ['Poppins', 'sans-serif'],
       },
       borderRadius: {
         '2xl': '20px',

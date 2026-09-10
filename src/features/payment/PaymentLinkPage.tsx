@@ -9,14 +9,14 @@ function CenteredCard({ emoji, title, subtitle, tone = '#FF5436' }: { emoji: str
     <div style={{
       display: 'flex', minHeight: '100dvh', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      padding: '0 24px', textAlign: 'center', fontFamily: '"Plus Jakarta Sans", sans-serif',
+      padding: '0 24px', textAlign: 'center', fontFamily: 'Poppins, sans-serif',
     }}>
       <div style={{
         width: 64, height: 64, borderRadius: 20, marginBottom: 16,
         background: tone, display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 30, color: '#fff',
       }}>{emoji}</div>
-      <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 22, color: '#15151A' }}>{title}</div>
+      <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 22, color: '#15151A' }}>{title}</div>
       <div style={{ fontSize: 13.5, color: '#6B6B76', marginTop: 8, maxWidth: 300, lineHeight: 1.5 }}>{subtitle}</div>
     </div>
   )
@@ -58,7 +58,7 @@ export default function PaymentLinkPage() {
   const av = avatarFor(charge.creditorName)
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#F5F5F8', paddingBottom: 40, fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
+    <div style={{ minHeight: '100dvh', background: '#F5F5F8', paddingBottom: 40, fontFamily: 'Poppins, sans-serif' }}>
       {/* Header */}
       <div style={{ background: '#fff', padding: '52px 20px 18px', borderBottom: '1px solid #EEEEF2' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
@@ -66,11 +66,11 @@ export default function PaymentLinkPage() {
             width: 32, height: 32, borderRadius: 10,
             background: 'linear-gradient(135deg,#FF5436,#FF8A3D)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 14, color: '#fff',
+            fontFamily: 'Poppins', fontWeight: 800, fontSize: 14, color: '#fff',
           }}>R</div>
           <span style={{ fontSize: 12.5, fontWeight: 700, color: '#6B6B76' }}>Rachei · Link seguro</span>
         </div>
-        <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 20, color: '#15151A', letterSpacing: '-.01em' }}>
+        <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 20, color: '#15151A', letterSpacing: '-.01em' }}>
           {charge.description}
         </div>
       </div>
@@ -88,7 +88,7 @@ export default function PaymentLinkPage() {
             {isPaid ? 'Pago' : 'Sua parte'}
           </div>
           <div style={{
-            fontFamily: '"Bricolage Grotesque"', fontWeight: 800,
+            fontFamily: 'Poppins', fontWeight: 800,
             fontSize: 42, letterSpacing: '-.02em',
             color: isPaid ? '#0E8F5C' : '#FF5436',
             lineHeight: 1.05, marginBottom: 16,

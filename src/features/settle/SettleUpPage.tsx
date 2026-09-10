@@ -155,7 +155,7 @@ export default function SettleUpPage() {
   const vazio = compensaveis.length === 0 && aConfirmar.length === 0 && outros.length === 0
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#F5F5F8', fontFamily: '"Plus Jakarta Sans", sans-serif', paddingBottom: 40 }}>
+    <div style={{ minHeight: '100dvh', background: '#F5F5F8', fontFamily: 'Poppins, sans-serif', paddingBottom: 40 }}>
       {/* Header */}
       <div style={{ background: 'linear-gradient(150deg,#FF5436,#FF8A3D)', padding: '52px 20px 24px', color: '#fff' }}>
         <button onClick={() => navigate('/dashboard')} style={{
@@ -167,7 +167,7 @@ export default function SettleUpPage() {
           </svg>
           Voltar
         </button>
-        <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 26, letterSpacing: '-.02em' }}>
+        <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 26, letterSpacing: '-.02em' }}>
           Acertar contas
         </div>
         <div style={{ fontSize: 13, opacity: .92, marginTop: 3 }}>
@@ -404,7 +404,7 @@ export default function SettleUpPage() {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 700, fontSize: 15, color: '#15151A', margin: '18px 2px 12px' }}>
+    <div style={{ fontFamily: 'Poppins', fontWeight: 700, fontSize: 15, color: '#15151A', margin: '18px 2px 12px' }}>
       {children}
     </div>
   )
@@ -621,7 +621,7 @@ function SheetIcon({ bg, children }: { bg: string; children: React.ReactNode }) 
 }
 
 function SheetTitle({ children }: { children: React.ReactNode }) {
-  return <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 19, color: '#15151A', marginBottom: 6 }}>{children}</div>
+  return <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 19, color: '#15151A', marginBottom: 6 }}>{children}</div>
 }
 
 function SheetText({ children }: { children: React.ReactNode }) {

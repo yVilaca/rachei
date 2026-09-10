@@ -130,10 +130,10 @@ export default function GroupsPage() {
   return (
     <div
       className="no-scrollbar min-h-dvh overflow-auto"
-      style={{ background: '#F5F5F8', padding: '52px 20px 110px', fontFamily: '"Plus Jakarta Sans", sans-serif' }}
+      style={{ background: '#F5F5F8', padding: '52px 20px 110px', fontFamily: 'Poppins, sans-serif' }}
     >
       {/* Title */}
-      <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 28, color: '#15151A', letterSpacing: '-0.02em', marginBottom: 4 }}>
+      <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 28, color: '#15151A', letterSpacing: '-0.02em', marginBottom: 4 }}>
         Grupos
       </div>
       <div style={{ fontSize: 13.5, color: '#6B6B76', marginBottom: 20 }}>
@@ -301,7 +301,7 @@ export default function GroupsPage() {
               padding: '24px 20px 40px', width: '100%', maxWidth: 480,
             }}
           >
-            <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 20, color: '#15151A', marginBottom: 20 }}>
+            <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 20, color: '#15151A', marginBottom: 20 }}>
               Novo grupo
             </div>
 
@@ -336,7 +336,7 @@ export default function GroupsPage() {
                 width: '100%', padding: '14px 16px', borderRadius: 14,
                 border: createError ? '2px solid #FF5436' : '2px solid #E8E8EF',
                 fontSize: 15, color: '#1A1A1F', outline: 'none',
-                fontFamily: '"Plus Jakarta Sans", sans-serif',
+                fontFamily: 'Poppins, sans-serif',
                 boxSizing: 'border-box',
               }}
             />

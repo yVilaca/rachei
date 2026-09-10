@@ -242,7 +242,7 @@ export default function DebtForm({ groupId, debt }: DebtFormProps) {
             onBlur={() => setTouchedAmount(true)}
             style={{
               flex: 1, border: 'none', background: 'transparent',
-              fontFamily: '"Bricolage Grotesque", sans-serif',
+              fontFamily: 'Poppins, sans-serif',
               fontWeight: 800, fontSize: 30, color: '#15151A',
               padding: '12px 8px', width: '100%', outline: 'none',
             }}
@@ -266,7 +266,7 @@ export default function DebtForm({ groupId, debt }: DebtFormProps) {
             border: `1.5px solid ${showDescError ? '#E0431F' : '#ECECF0'}`,
             borderRadius: 16, padding: '14px 16px', fontSize: 15,
             color: '#15151A', background: '#F7F7FA', outline: 'none',
-            fontFamily: '"Plus Jakarta Sans", sans-serif',
+            fontFamily: 'Poppins, sans-serif',
           }}
         />
         {showDescError && (
@@ -372,7 +372,7 @@ export default function DebtForm({ groupId, debt }: DebtFormProps) {
                         width: 68, border: 'none', background: 'transparent',
                         fontWeight: 800, fontSize: 14, color: '#15151A',
                         textAlign: 'right', outline: 'none',
-                        fontFamily: '"Plus Jakarta Sans", sans-serif',
+                        fontFamily: 'Poppins, sans-serif',
                       }}
                     />
                   </div>

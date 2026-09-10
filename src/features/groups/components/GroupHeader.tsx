@@ -51,7 +51,7 @@ export default function GroupHeader({ group, groupBalance }: GroupHeaderProps) {
           {group.emoji ?? '👥'}
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 22, color: '#15151A', letterSpacing: '-0.01em' }}>
+          <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 22, color: '#15151A', letterSpacing: '-0.01em' }}>
             {group.name}
           </div>
           <div style={{ fontSize: 12.5, color: '#6B6B76' }}>
@@ -112,7 +112,7 @@ export default function GroupHeader({ group, groupBalance }: GroupHeaderProps) {
             Seu saldo neste grupo
           </div>
           <div style={{
-            fontFamily: '"Bricolage Grotesque"', fontWeight: 800,
+            fontFamily: 'Poppins', fontWeight: 800,
             fontSize: 22, color: balanceColor, marginTop: 2,
           }}>
             {formatCurrency(Math.abs(groupBalance))}

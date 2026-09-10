@@ -35,7 +35,7 @@ export default function AuthPage({ mode = 'login' }: AuthPageProps) {
             fontWeight: 900,
             color: '#fff',
             boxShadow: '0 16px 40px rgba(255,84,54,0.35)',
-            fontFamily: '"Bricolage Grotesque", sans-serif',
+            fontFamily: 'Poppins, sans-serif',
           }}
         >
           R

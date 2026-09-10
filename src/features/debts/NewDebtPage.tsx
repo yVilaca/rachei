@@ -23,7 +23,7 @@ export default function NewDebtPage() {
         >
           Cancelar
         </button>
-        <span style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 16, color: '#15151A' }}>
+        <span style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 16, color: '#15151A' }}>
           Nova dívida
         </span>
         <span style={{ width: 54 }} />

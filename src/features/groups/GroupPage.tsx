@@ -212,7 +212,7 @@ export default function GroupPage() {
               padding: '24px 20px 40px', width: '100%', maxWidth: 480,
             }}
           >
-            <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 20, color: '#15151A', marginBottom: 20 }}>
+            <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 20, color: '#15151A', marginBottom: 20 }}>
               Adicionar membro
             </div>
 
@@ -227,7 +227,7 @@ export default function GroupPage() {
                   width: '100%', padding: '14px 16px', borderRadius: 14,
                   border: addError ? '2px solid #FF5436' : '2px solid #E8E8EF',
                   fontSize: 15, color: '#1A1A1F', outline: 'none',
-                  fontFamily: '"Plus Jakarta Sans", sans-serif',
+                  fontFamily: 'Poppins, sans-serif',
                   boxSizing: 'border-box',
                   paddingRight: phoneStatus !== 'idle' ? 44 : 16,
                 }}
@@ -267,7 +267,7 @@ export default function GroupPage() {
                     width: '100%', padding: '14px 16px', borderRadius: 14,
                     border: addError && !addName.trim() ? '2px solid #FF5436' : '2px solid #E8E8EF',
                     fontSize: 15, color: '#1A1A1F', outline: 'none',
-                    fontFamily: '"Plus Jakarta Sans", sans-serif',
+                    fontFamily: 'Poppins, sans-serif',
                     boxSizing: 'border-box', marginBottom: 14,
                   }}
                 />

@@ -70,12 +70,12 @@ export default function DashboardPage() {
   return (
     <div
       className="no-scrollbar min-h-dvh overflow-auto"
-      style={{ background: '#F5F5F8', fontFamily: '"Plus Jakarta Sans", sans-serif', paddingBottom: 110 }}
+      style={{ background: '#F5F5F8', fontFamily: 'Poppins, sans-serif', paddingBottom: 110 }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '52px 20px 14px' }}>
         <div>
           <div style={{ fontSize: 13, color: '#6B6B76', fontWeight: 600 }}>Olá, {currentUser.name.split(' ')[0]} 👋</div>
-          <div style={{ fontFamily: '"Bricolage Grotesque", sans-serif', fontWeight: 800, fontSize: 24, color: '#15151A', letterSpacing: '-.02em' }}>
+          <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: 24, color: '#15151A', letterSpacing: '-.02em' }}>
             Seu saldo
           </div>
         </div>
@@ -108,7 +108,7 @@ export default function DashboardPage() {
           ) : (
             <>
               <div style={{ fontSize: 12.5, opacity: .92, fontWeight: 600, position: 'relative' }}>Saldo geral consolidado</div>
-              <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 40, lineHeight: 1.05, margin: '6px 0 4px', letterSpacing: '-.02em', position: 'relative' }}>
+              <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 40, lineHeight: 1.05, margin: '6px 0 4px', letterSpacing: '-.02em', position: 'relative' }}>
                 {netText}
               </div>
               <div style={{ fontSize: 12.5, opacity: .94, position: 'relative' }}>{netSub}</div>
@@ -166,7 +166,7 @@ export default function DashboardPage() {
       {!loading && totalItems > 0 && (
         <div style={{ padding: '24px 20px 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 700, fontSize: 16, color: '#15151A' }}>
+            <span style={{ fontFamily: 'Poppins', fontWeight: 700, fontSize: 16, color: '#15151A' }}>
               Minhas dívidas
             </span>
             <span style={{ fontSize: 12, color: '#6B6B76', fontWeight: 600 }}>
@@ -233,7 +233,7 @@ export default function DashboardPage() {
 
       {!loading && (data?.saldoPorPessoa ?? []).length > 0 && (
         <div style={{ padding: '24px 20px 0' }}>
-          <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 700, fontSize: 16, color: '#15151A', marginBottom: 12 }}>
+          <div style={{ fontFamily: 'Poppins', fontWeight: 700, fontSize: 16, color: '#15151A', marginBottom: 12 }}>
             Por amigo
           </div>
           <div style={{ background: '#fff', borderRadius: 22, padding: 4, boxShadow: '0 2px 12px rgba(0,0,0,.04)' }}>
@@ -272,7 +272,7 @@ export default function DashboardPage() {
 
       <div style={{ padding: '24px 20px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <span style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 700, fontSize: 16, color: '#15151A' }}>
+          <span style={{ fontFamily: 'Poppins', fontWeight: 700, fontSize: 16, color: '#15151A' }}>
             Seus grupos
           </span>
           <button

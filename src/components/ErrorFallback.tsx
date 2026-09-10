@@ -3,7 +3,7 @@ export default function ErrorFallback() {
     <div style={{
       minHeight: '100dvh', display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center', gap: 10, padding: 24,
-      textAlign: 'center', fontFamily: '"Plus Jakarta Sans", sans-serif',
+      textAlign: 'center', fontFamily: 'Poppins, sans-serif',
     }}>
       <div style={{
         width: 56, height: 56, borderRadius: 18,
@@ -11,7 +11,7 @@ export default function ErrorFallback() {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 26, color: '#fff',
       }}>!</div>
-      <div style={{ fontFamily: '"Bricolage Grotesque"', fontWeight: 800, fontSize: 20, color: '#15151A' }}>
+      <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 20, color: '#15151A' }}>
         Algo deu errado
       </div>
       <div style={{ fontSize: 13.5, color: '#6B6B76', maxWidth: 300, lineHeight: 1.5 }}>

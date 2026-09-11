@@ -4,6 +4,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import RootLayout from './RootLayout'
 import PrivateRoute from './PrivateRoute'
 import AppShell from './AppShell'
+import AppFrame from './AppFrame'
 
 // Páginas em chunks separados (code-splitting): login e a cobrança pública não
 // carregam mais o app autenticado inteiro. Layout/guards ficam eager.
@@ -28,28 +29,41 @@ export const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       { path: '/', element: <Navigate to="/dashboard" replace /> },
+      // Público (largura total)
       { path: '/login', element: <AuthPage /> },
       { path: '/cadastro', element: <AuthPage mode="register" /> },
       { path: '/esqueci-senha', element: <ForgotPasswordPage /> },
       { path: '/verificar-2fa', element: <TwoFactorChallengePage /> },
-      { path: '/verificar-telefone', element: <PrivateRoute><VerifyPhonePage /></PrivateRoute> },
-      // Pages with bottom nav
+      { path: '/pagar/:token', element: <PaymentLinkPage /> },
+
+      // App autenticado — dentro da moldura central (responsivo no desktop)
       {
-        element: <PrivateRoute><AppShell /></PrivateRoute>,
+        element: (
+          <PrivateRoute>
+            <AppFrame />
+          </PrivateRoute>
+        ),
         children: [
-          { path: '/dashboard', element: <DashboardPage /> },
-          { path: '/grupos', element: <GroupsPage /> },
-          { path: '/grupos/:id', element: <GroupPage /> },
-          { path: '/atividade', element: <ActivityPage /> },
-          { path: '/perfil', element: <ProfilePage /> },
+          // Telas com bottom nav
+          {
+            element: <AppShell />,
+            children: [
+              { path: '/dashboard', element: <DashboardPage /> },
+              { path: '/grupos', element: <GroupsPage /> },
+              { path: '/grupos/:id', element: <GroupPage /> },
+              { path: '/atividade', element: <ActivityPage /> },
+              { path: '/perfil', element: <ProfilePage /> },
+            ],
+          },
+          // Telas sem bottom nav (fluxos)
+          { path: '/verificar-telefone', element: <VerifyPhonePage /> },
+          { path: '/grupos/:id/nova-divida', element: <NewDebtPage /> },
+          { path: '/dividas/:id/editar', element: <EditDebtPage /> },
+          { path: '/dividas/:id', element: <DebtDetailPage /> },
+          { path: '/acertar', element: <SettleUpPage /> },
         ],
       },
-      // Pages without bottom nav
-      { path: '/grupos/:id/nova-divida', element: <PrivateRoute><NewDebtPage /></PrivateRoute> },
-      { path: '/dividas/:id/editar', element: <PrivateRoute><EditDebtPage /></PrivateRoute> },
-      { path: '/dividas/:id', element: <PrivateRoute><DebtDetailPage /></PrivateRoute> },
-      { path: '/acertar', element: <PrivateRoute><SettleUpPage /></PrivateRoute> },
-      { path: '/pagar/:token', element: <PaymentLinkPage /> },
+
       { path: '*', element: <NotFoundPage /> },
     ],
   },

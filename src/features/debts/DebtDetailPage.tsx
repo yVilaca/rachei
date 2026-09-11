@@ -578,8 +578,7 @@ function DebtorView({
       </div>
 
       {isPending && (
-        <div style={{
-          position: 'fixed', bottom: 0, left: 0, right: 0,
+        <div className="rc-bottombar" style={{
           padding: '14px 22px 36px',
           background: 'linear-gradient(0deg, #fff 70%, rgba(255,255,255,0))',
           zIndex: 10,

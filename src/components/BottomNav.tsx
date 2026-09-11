@@ -131,7 +131,7 @@ export default function BottomNav() {
 
       {/* Nav bar */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-50"
+        className="rc-bottombar z-50"
         style={{
           background: '#fff',
           borderTop: '1px solid #EEEEF2',

@@ -44,6 +44,13 @@
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
+/* Barra fixa inferior (nav, botões de submit). No desktop, alinha e limita à
+   moldura central do app (mesma largura da coluna do AppFrame). */
+.rc-bottombar { position: fixed; bottom: 0; left: 0; right: 0; }
+@media (min-width: 1024px) {
+  .rc-bottombar { left: 50%; right: auto; width: 100%; max-width: 480px; transform: translateX(-50%); }
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }

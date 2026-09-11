@@ -12,14 +12,15 @@ interface LogoProps {
  */
 export default function Logo({ height = 40, tone = 'ink', className }: LogoProps) {
   const fill = tone === 'light' ? '#FFFFFF' : '#17181F'
+  // Com className (ex.: h-16 lg:h-24) o tamanho vem do CSS; sem ela, usa `height`.
   return (
     <svg
       role="img"
       aria-label="Rachei"
       viewBox="0 0 1774 887"
-      height={height}
+      height={className ? undefined : height}
       className={className}
-      style={{ height, width: 'auto', display: 'block' }}
+      style={className ? { width: 'auto', display: 'block' } : { height, width: 'auto', display: 'block' }}
     >
       <g transform="translate(0,887) scale(0.1,-0.1)" fill={fill}>
         <path d="M2000 5711 c0 -16 170 -190 240 -246 242 -193 455 -297 750 -367 29 -7 332 -13 850 -17 801 -6 805 -6 845 -28 102 -55 164 -139 185 -252 12 -67 0 -149 -36 -229 -13 -30 -22 -58 -18 -61 8 -8 490 -14 542 -6 42 6 45 9 72 69 63 139 76 342 33 501 -50 183 -183 360 -360 483 -96 67 -273 133 -407 151 -100 14 -2696 15 -2696 2z" />

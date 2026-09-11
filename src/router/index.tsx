@@ -34,7 +34,11 @@ export const router = createBrowserRouter([
       { path: '/cadastro', element: <AuthPage mode="register" /> },
       { path: '/esqueci-senha', element: <ForgotPasswordPage /> },
       { path: '/verificar-2fa', element: <TwoFactorChallengePage /> },
-      { path: '/pagar/:token', element: <PaymentLinkPage /> },
+      // Cobrança pública — também centralizada no desktop (sem exigir login)
+      {
+        element: <AppFrame />,
+        children: [{ path: '/pagar/:token', element: <PaymentLinkPage /> }],
+      },
 
       // App autenticado — dentro da moldura central (responsivo no desktop)
       {

@@ -242,6 +242,7 @@ export default function SettleUpPage() {
       {(detalhe || detalheLoading) && (
         <div
           onClick={() => { setDetalhe(null) }}
+          className="rc-overlay"
           style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
         >
           <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: 480, maxHeight: '82dvh', overflowY: 'auto' }}>
@@ -289,6 +290,7 @@ export default function SettleUpPage() {
       {selPessoa && (
         <div
           onClick={() => { if (!busy) closeSelecao() }}
+          className="rc-overlay"
           style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
         >
           <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: 480, maxHeight: '88dvh', overflowY: 'auto' }}>
@@ -358,6 +360,7 @@ export default function SettleUpPage() {
       {action && (
         <div
           onClick={() => { if (!busy) setAction(null) }}
+          className="rc-overlay"
           style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
         >
           <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: 480 }}>

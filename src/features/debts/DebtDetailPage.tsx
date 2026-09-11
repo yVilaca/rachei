@@ -233,6 +233,7 @@ function CreditorView({ debt, currentUser, onRefresh }: { debt: Debt; currentUse
 
       {confirmDelete && (
         <div
+          className="rc-overlay"
           onClick={() => { if (!deleting) setConfirmDelete(false) }}
           style={{
             position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,.45)',

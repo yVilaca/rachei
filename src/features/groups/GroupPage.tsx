@@ -198,6 +198,7 @@ export default function GroupPage() {
       {/* Modal adicionar membro */}
       {showAddModal && (
         <div
+          className="rc-overlay"
           onClick={() => { if (!adding) setShowAddModal(false) }}
           style={{
             position: 'fixed', inset: 0, zIndex: 100,

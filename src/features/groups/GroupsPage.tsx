@@ -287,6 +287,7 @@ export default function GroupsPage() {
       {/* Modal criar grupo */}
       {showCreateModal && (
         <div
+          className="rc-overlay"
           onClick={() => { if (!creating) setShowCreateModal(false) }}
           style={{
             position: 'fixed', inset: 0, zIndex: 100,

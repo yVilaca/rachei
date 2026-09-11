@@ -212,6 +212,7 @@ export default function ProfilePage() {
       {editing && (
         <div
           onClick={() => { if (!savingName) setEditing(false) }}
+          className="rc-overlay"
           style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
         >
           <div

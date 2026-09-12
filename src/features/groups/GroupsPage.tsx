@@ -204,9 +204,9 @@ export default function GroupsPage() {
 
       {/* Group cards */}
       {!loading && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:gap-4">
           {groups.length === 0 && !error && (
-            <p style={{ textAlign: 'center', color: '#6B6B76', fontSize: 13.5, padding: '24px 0' }}>
+            <p className="lg:col-span-2" style={{ textAlign: 'center', color: '#6B6B76', fontSize: 13.5, padding: '24px 0' }}>
               Nenhum grupo ainda. Crie o primeiro!
             </p>
           )}

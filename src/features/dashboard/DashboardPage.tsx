@@ -66,10 +66,6 @@ export default function DashboardPage() {
   const totalItems = aReceber.length + aPagar.length
   const saldoPorPessoa = data?.saldoPorPessoa ?? []
   const grupos = data?.grupos ?? []
-  // Conta realmente vazia: sem saldo, sem grupos, sem pessoas e sem acerto.
-  const isEmpty = !loading && totalAReceber === 0 && totalAPagar === 0
-    && grupos.length === 0 && saldoPorPessoa.length === 0 && !temAcerto
-
   return (
     <div className="no-scrollbar min-h-dvh overflow-auto" style={{ background: '#F5F5F8', fontFamily: 'Poppins, sans-serif' }}>
       <div className="px-5 pb-28 pt-14 lg:px-9 lg:pb-10 lg:pt-9">
@@ -94,10 +90,7 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* Novo usuário → boas-vindas; senão, grid mobile/desktop */}
-        {isEmpty ? (
-          <EmptyDashboard onCreate={() => navigate('/grupos')} />
-        ) : (
+        {/* Grid: mobile empilhado · desktop 2 colunas */}
         <div className="mt-5 lg:mt-7 lg:grid lg:grid-cols-[1.6fr_1fr] lg:items-start lg:gap-6">
           {/* ── Coluna esquerda ── */}
           <div className="flex flex-col gap-4">
@@ -246,35 +239,9 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-        )}
       </div>
 
       <Toast message={toastMsg} />
-    </div>
-  )
-}
-
-// ── EmptyDashboard (conta nova) ────────────────────────────────────────────────
-
-function EmptyDashboard({ onCreate }: { onCreate: () => void }) {
-  return (
-    <div
-      className="mx-auto mt-8 flex w-full max-w-[520px] flex-col items-center rounded-3xl bg-white px-8 py-14 text-center lg:mt-16"
-      style={{ boxShadow: cardShadow }}
-    >
-      <div style={{ width: 76, height: 76, borderRadius: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 38, background: 'linear-gradient(135deg,#FFE6DE,#FFD8C2)' }}>🎉</div>
-      <h2 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: 22, color: '#15151A', margin: '20px 0 8px', letterSpacing: '-.02em' }}>
-        Tudo pronto pra começar
-      </h2>
-      <p style={{ fontSize: 14.5, color: '#6B6B76', lineHeight: 1.55, maxWidth: 360 }}>
-        Crie um grupo, chame a galera e registre a primeira dívida. O Rachei cuida das contas.
-      </p>
-      <button
-        onClick={onCreate}
-        style={{ marginTop: 24, height: 52, padding: '0 28px', borderRadius: 14, border: 'none', background: 'linear-gradient(135deg,#FF5436,#FF8A3D)', color: '#fff', fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: 15.5, cursor: 'pointer', boxShadow: '0 10px 22px rgba(255,84,54,.28)' }}
-      >
-        Criar meu primeiro grupo
-      </button>
     </div>
   )
 }

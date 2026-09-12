@@ -15,7 +15,8 @@ interface ApiDashboard {
     group_name: string
     amount_cents: number
     status: string
-    debtor: ApiUserMin
+    // id numérico (usuário) ou 'p<n>' (contato pendente)
+    debtor: { id: number | string; name: string; pending?: boolean }
   }>
   a_pagar: Array<{
     installment_id: string

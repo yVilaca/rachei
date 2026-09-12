@@ -33,10 +33,15 @@ export default function DebtForm({ groupId, debt }: DebtFormProps) {
   const [group, setGroup] = useState<GroupDetail | null>(null)
   const [loadError, setLoadError] = useState(false)
 
-  // Somente membros ativos com usuário real participam de dívidas
-  const activeMembers = (group?.members ?? []).filter(
-    (m) => m.status === 'ativo' && m.user !== null,
-  )
+  // Participantes elegíveis: usuários ativos e contatos pendentes (convidados por
+  // telefone, ainda sem conta). Contato pendente usa a chave 'p<id>'.
+  const participants = (group?.members ?? [])
+    .filter((m) => (m.status === 'ativo' && m.user) || (m.status === 'pendente_registro' && m.contatoPendente))
+    .map((m) =>
+      m.user
+        ? { key: m.user.id, name: m.user.name, pending: false }
+        : { key: `p${m.contatoPendente!.id}`, name: m.contatoPendente!.name, pending: true },
+    )
 
   // ── state ────────────────────────────────────────────────────────────────
   const [amountCents, setAmountCents] = useState(0)
@@ -51,12 +56,13 @@ export default function DebtForm({ groupId, debt }: DebtFormProps) {
     groupService.getGroup(groupId)
       .then((g) => {
         setGroup(g)
-        // Modo criação: seleciona todos os membros ativos por padrão (uma vez).
+        // Modo criação: seleciona todos os participantes por padrão (uma vez),
+        // incluindo contatos pendentes — o convite pode ainda não ter sido aceito.
         if (!isEdit) {
-          const ativos = (g.members ?? [])
-            .filter((m) => m.status === 'ativo' && m.user !== null)
-            .map((m) => m.user!.id)
-          setSelectedDebtors((prev) => (prev.length === 0 ? ativos : prev))
+          const todos = (g.members ?? [])
+            .filter((m) => (m.status === 'ativo' && m.user) || (m.status === 'pendente_registro' && m.contatoPendente))
+            .map((m) => (m.user ? m.user.id : `p${m.contatoPendente!.id}`))
+          setSelectedDebtors((prev) => (prev.length === 0 ? todos : prev))
         }
       })
       .catch(() => setLoadError(true))
@@ -305,9 +311,10 @@ export default function DebtForm({ groupId, debt }: DebtFormProps) {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {activeMembers.map((m) => {
-            const userId = m.user!.id
-            const name = m.user!.name
+          {participants.map((p) => {
+            const userId = p.key
+            const name = p.name
+            const isPending = p.pending
             const isSelected = selectedDebtors.includes(userId)
             const isPayer = userId === paidByUserId
             const myShareCents = isSelected
@@ -344,6 +351,12 @@ export default function DebtForm({ groupId, debt }: DebtFormProps) {
                       fontSize: 10, fontWeight: 800, color: '#0E8F5C',
                       background: '#E9F9F0', padding: '2px 7px', borderRadius: 999, whiteSpace: 'nowrap',
                     }}>minha parte</span>
+                  )}
+                  {isPending && (
+                    <span style={{
+                      fontSize: 10, fontWeight: 800, color: '#B07D00',
+                      background: '#FFF8E6', padding: '2px 7px', borderRadius: 999, whiteSpace: 'nowrap',
+                    }}>pendente</span>
                   )}
                 </div>
 

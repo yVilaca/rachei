@@ -24,6 +24,7 @@ export interface UserMin {
 }
 
 export interface ContatoPendente {
+  id: number
   name: string
 }
 
@@ -74,7 +75,8 @@ export type PaidVia = 'payment' | 'compensation'
 
 export interface Installment {
   id: string
-  debtor: UserMin
+  /** Devedor: usuário real ou contato pendente (`pending`, id no formato `p<id>`). */
+  debtor: UserMin & { pending?: boolean }
   amountCents: number
   status: InstallmentStatus
   /** Como foi quitada: pagamento normal ou compensação de dívidas. */

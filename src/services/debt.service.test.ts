@@ -80,6 +80,35 @@ describe('debtService.createDebt — payload camel→snake', () => {
     })
     expect(captured!).not.toHaveProperty('paid_by_id')
   })
+
+  it('mapeia contato pendente (id "p<n>") para debtor_contato_id', async () => {
+    let captured: Record<string, unknown> | null = null
+    server.use(http.post(`${API}/api/despesas/`, async ({ request }) => {
+      captured = (await request.json()) as Record<string, unknown>
+      return HttpResponse.json(apiDebt, { status: 201 })
+    }))
+
+    await debtService.createDebt({
+      groupId: 'g1',
+      description: 'Bar',
+      totalAmountCents: 6000,
+      splitType: 'custom',
+      debtors: [
+        { userId: '2', amountCents: 3000 },
+        { userId: 'p7', amountCents: 3000 },
+      ],
+    })
+
+    expect(captured!).toMatchObject({
+      parcelas: [
+        { debtor_id: 2, amount_cents: 3000 },
+        { debtor_contato_id: 7, amount_cents: 3000 },
+      ],
+    })
+    // parcela do contato pendente não envia debtor_id
+    const parcelas = (captured as { parcelas: Record<string, unknown>[] }).parcelas
+    expect(parcelas[1]).not.toHaveProperty('debtor_id')
+  })
 })
 
 describe('debtService.updateDebt', () => {

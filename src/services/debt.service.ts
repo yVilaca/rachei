@@ -8,9 +8,16 @@ interface ApiUserMin {
   name: string
 }
 
+// Devedor da parcela: usuário real (id numérico) ou contato pendente (id 'p<n>').
+interface ApiDebtor {
+  id: number | string
+  name: string
+  pending: boolean
+}
+
 interface ApiParcelaBalance {
   id: string
-  debtor: ApiUserMin
+  debtor: ApiDebtor
   amount_cents: number
   status: 'pending' | 'awaiting_confirmation' | 'paid'
 }
@@ -42,7 +49,7 @@ function toInstallment(raw: ApiParcelaBalance | ApiParcelaDetail): Installment {
   const detail = raw as ApiParcelaDetail
   return {
     id: raw.id,
-    debtor: { id: String(raw.debtor.id), name: raw.debtor.name },
+    debtor: { id: String(raw.debtor.id), name: raw.debtor.name, pending: raw.debtor.pending },
     amountCents: raw.amount_cents,
     status: raw.status,
     paidVia: detail.paid_via ?? undefined,
@@ -70,6 +77,15 @@ function toDebt(raw: ApiDebt): Debt {
   }
 }
 
+// Uma parcela de entrada: contato pendente (id 'p<n>') → debtor_contato_id;
+// usuário real → debtor_id.
+function toParcelaPayload(d: { userId: string; amountCents: number }) {
+  const base = { amount_cents: d.amountCents }
+  return d.userId.startsWith('p')
+    ? { ...base, debtor_contato_id: Number(d.userId.slice(1)) }
+    : { ...base, debtor_id: Number(d.userId) }
+}
+
 // ── Service ───────────────────────────────────────────────────────────────────
 
 export const debtService = {
@@ -89,10 +105,7 @@ export const debtService = {
       description: input.description,
       total_amount_cents: input.totalAmountCents,
       split_type: input.splitType,
-      parcelas: input.debtors.map((d) => ({
-        debtor_id: Number(d.userId),
-        amount_cents: d.amountCents,
-      })),
+      parcelas: input.debtors.map(toParcelaPayload),
     }
     const { data } = await api.post<ApiDebt>('/api/despesas/', payload)
     return toDebt(data)
@@ -106,7 +119,7 @@ export const debtService = {
     if (input.debtors) {
       payload.total_amount_cents = input.totalAmountCents
       payload.split_type = input.splitType
-      payload.parcelas = input.debtors.map((d) => ({ debtor_id: Number(d.userId), amount_cents: d.amountCents }))
+      payload.parcelas = input.debtors.map(toParcelaPayload)
     }
     const { data } = await api.patch<ApiDebt>(`/api/despesas/${id}/`, payload)
     return toDebt(data)

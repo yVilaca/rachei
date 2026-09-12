@@ -95,7 +95,7 @@ export default function ProfilePage() {
 
   return (
     <div
-      className="no-scrollbar min-h-dvh overflow-auto"
+      className="no-scrollbar min-h-dvh overflow-auto lg:mx-auto lg:max-w-[640px]"
       style={{ background: '#F5F5F8', padding: '52px 20px 110px', fontFamily: 'Poppins, sans-serif' }}
     >
       <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 28, color: '#15151A', letterSpacing: '-0.02em', marginBottom: 20 }}>

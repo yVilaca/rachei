@@ -47,8 +47,8 @@ export default function Sidebar() {
 
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-r border-[#ECECF0] bg-white px-4 py-7 lg:sticky lg:top-0 lg:flex lg:h-dvh">
-      <div className="px-2.5">
-        <Logo tone="ink" className="h-7 w-auto" />
+      <div className="px-2.5 flex justify-center">
+        <Logo tone="ink" className="h-20 mr-4" />
       </div>
 
       <nav className="mt-9 flex flex-col gap-1">

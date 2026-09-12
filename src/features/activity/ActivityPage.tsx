@@ -116,8 +116,8 @@ export default function ActivityPage() {
 
   return (
     <div
-      className="no-scrollbar min-h-dvh overflow-auto lg:mx-auto lg:max-w-[640px]"
-      style={{ background: '#F5F5F8', padding: '52px 20px 110px', fontFamily: 'Poppins, sans-serif' }}
+      className="no-scrollbar min-h-dvh overflow-auto px-5 pb-28 pt-14 lg:px-10 lg:pb-10 lg:pt-9"
+      style={{ background: '#F5F5F8', fontFamily: 'Poppins, sans-serif' }}
     >
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -208,7 +208,7 @@ export default function ActivityPage() {
             }}>
               {label}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div className="grid grid-cols-1 gap-2.5 lg:gap-3 lg:[grid-template-columns:repeat(auto-fill,minmax(340px,1fr))]">
               {items.map((ev) => (
                 <EventCard
                   key={ev.id}

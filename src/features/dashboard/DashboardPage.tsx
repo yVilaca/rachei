@@ -91,9 +91,9 @@ export default function DashboardPage() {
         </div>
 
         {/* Grid: mobile empilhado · desktop 2 colunas */}
-        <div className="mt-5 lg:mt-7 lg:grid lg:grid-cols-[1.6fr_1fr] lg:items-start lg:gap-6">
+        <div className="mt-5 lg:mt-7 lg:grid lg:grid-cols-[minmax(0,760px)_minmax(300px,380px)] lg:items-start lg:justify-start lg:gap-6">
           {/* ── Coluna esquerda ── */}
-          <div className="flex flex-col gap-4">
+          <div className="flex w-full flex-col gap-4 lg:max-w-[760px]">
             {/* Saldo consolidado */}
             <div style={{
               borderRadius: 28, padding: '24px 22px',
@@ -169,7 +169,7 @@ export default function DashboardPage() {
                     )
                   })}
                 </div>
-                <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-2 lg:gap-3">
+                <div className="grid grid-cols-1 gap-2.5 lg:gap-3 lg:[grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
                   {activeList.length === 0 ? (
                     <div className="lg:col-span-2" style={{ background: '#fff', borderRadius: 18, padding: '20px 16px', textAlign: 'center', boxShadow: cardShadow }}>
                       <div style={{ fontSize: 14, fontWeight: 700, color: '#15151A' }}>{debtTab === 0 ? 'Nenhuma cobrança pendente' : 'Você não deve nada!'}</div>

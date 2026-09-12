@@ -135,7 +135,7 @@ export default function GroupPage() {
 
   if (loading) {
     return (
-      <div className="no-scrollbar min-h-dvh overflow-auto bg-[#F5F5F8] pb-28 lg:mx-auto lg:max-w-[820px]">
+      <div className="no-scrollbar min-h-dvh overflow-auto bg-[#F5F5F8] pb-28">
         <div style={{ padding: '52px 20px 0' }}>
           <div style={{ height: 120, background: '#fff', borderRadius: 18, opacity: 0.5 }} />
         </div>
@@ -161,7 +161,7 @@ export default function GroupPage() {
   const isAdmin = currentMember?.role === 'admin'
 
   return (
-    <div className="no-scrollbar min-h-dvh overflow-auto bg-[#F5F5F8] pb-28 lg:mx-auto lg:max-w-[820px]">
+    <div className="no-scrollbar min-h-dvh overflow-auto bg-[#F5F5F8] pb-28">
       <GroupHeader group={group} groupBalance={groupBalance} />
       <DebtList debts={debts} />
 

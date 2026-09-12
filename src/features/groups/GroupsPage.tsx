@@ -129,8 +129,8 @@ export default function GroupsPage() {
 
   return (
     <div
-      className="no-scrollbar min-h-dvh overflow-auto"
-      style={{ background: '#F5F5F8', padding: '52px 20px 110px', fontFamily: 'Poppins, sans-serif' }}
+      className="no-scrollbar min-h-dvh overflow-auto px-5 pb-28 pt-14 lg:px-10 lg:pb-10 lg:pt-9"
+      style={{ background: '#F5F5F8', fontFamily: 'Poppins, sans-serif' }}
     >
       {/* Title */}
       <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 28, color: '#15151A', letterSpacing: '-0.02em', marginBottom: 4 }}>
@@ -204,7 +204,7 @@ export default function GroupsPage() {
 
       {/* Group cards */}
       {!loading && (
-        <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:gap-4">
+        <div className="grid grid-cols-1 gap-3 lg:gap-4 lg:[grid-template-columns:repeat(auto-fill,minmax(340px,1fr))]">
           {groups.length === 0 && !error && (
             <p className="lg:col-span-2" style={{ textAlign: 'center', color: '#6B6B76', fontSize: 13.5, padding: '24px 0' }}>
               Nenhum grupo ainda. Crie o primeiro!

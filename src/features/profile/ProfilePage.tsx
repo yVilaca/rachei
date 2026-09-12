@@ -101,7 +101,7 @@ export default function ProfilePage() {
       className="no-scrollbar min-h-dvh overflow-auto px-5 pb-28 pt-14 lg:px-9 lg:pb-10 lg:pt-9"
       style={{ background: '#F5F5F8', fontFamily: 'Poppins, sans-serif' }}
     >
-      <div className="mx-auto w-full lg:max-w-[1000px]">
+      <div className="w-full">
         <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 28, color: '#15151A', letterSpacing: '-0.02em', marginBottom: 20 }}>
           Perfil
         </div>
@@ -137,9 +137,9 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Desktop: 2 colunas · Mobile: empilhado */}
-        <div className="mt-4 lg:mt-5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5">
-          {/* Coluna esquerda: plano */}
+        {/* Desktop: grade fluida (mais colunas em telas maiores) · Mobile: empilhado */}
+        <div className="mt-4 grid grid-cols-1 gap-5 lg:mt-5 lg:grid-cols-2 lg:items-start 2xl:grid-cols-3">
+          {/* Plano */}
           <div>
             {isFree ? (
               <div style={{ borderRadius: 24, padding: 22, background: 'linear-gradient(140deg,#2A1A12,#4A2A18)', color: '#fff', position: 'relative', overflow: 'hidden' }}>
@@ -167,14 +167,17 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* Coluna direita: segurança + notificações + sair */}
-          <div className="mt-6 lg:mt-0">
+          {/* Segurança */}
+          <div>
             <div style={sectionTitle}>Segurança</div>
             <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 2px 10px rgba(0,0,0,.04)', padding: '16px 16px' }}>
               <TwoFactorSection />
             </div>
+          </div>
 
-            <div style={{ ...sectionTitle, marginTop: 24 }}>Notificações</div>
+          {/* Notificações */}
+          <div>
+            <div style={sectionTitle}>Notificações</div>
             <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 2px 10px rgba(0,0,0,.04)', overflow: 'hidden' }}>
               {TOGGLES.map((t, i) => {
                 const on = user[t.key]
@@ -191,15 +194,15 @@ export default function ProfilePage() {
                 )
               })}
             </div>
-
-            <button
-              type="button" onClick={handleLogout}
-              style={{ marginTop: 18, width: '100%', textAlign: 'center', color: '#E0431F', fontWeight: 700, fontSize: 14.5, padding: 14, cursor: 'pointer', background: 'none', border: 'none' }}
-            >
-              Sair da conta
-            </button>
           </div>
         </div>
+
+        <button
+          type="button" onClick={handleLogout}
+          style={{ margin: '20px auto 0', width: '100%', maxWidth: 320, display: 'block', textAlign: 'center', color: '#E0431F', fontWeight: 700, fontSize: 14.5, padding: 14, cursor: 'pointer', background: 'none', border: 'none' }}
+        >
+          Sair da conta
+        </button>
       </div>
 
       <Toast message={toastMsg} />

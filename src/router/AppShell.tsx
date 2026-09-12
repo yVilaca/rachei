@@ -11,10 +11,8 @@ export default function AppShell() {
   return (
     <div className="min-h-dvh bg-[#EAEAEF] lg:flex">
       <Sidebar />
-      <main className="min-h-dvh w-full flex-1">
-        <div className="mx-auto w-full lg:max-w-[980px]">
-          <Outlet />
-        </div>
+      <main className="min-h-dvh w-full flex-1 overflow-x-hidden">
+        <Outlet />
       </main>
       <div className="lg:hidden">
         <BottomNav />

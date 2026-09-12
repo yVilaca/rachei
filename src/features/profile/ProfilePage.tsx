@@ -21,6 +21,10 @@ const TOGGLES: { key: PrefKey; icon: string; label: string }[] = [
   { key: 'notifLembretes', icon: '📅', label: 'Lembretes semanais' },
 ]
 
+const sectionTitle: React.CSSProperties = {
+  fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 15, color: '#15151A', margin: '0 2px 12px',
+}
+
 function Toggle({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) {
   return (
     <button
@@ -76,7 +80,6 @@ export default function ProfilePage() {
 
   const togglePref = async (key: PrefKey, next: boolean) => {
     if (!user) return
-    // Otimista: atualiza na hora; reverte se falhar.
     useAuthStore.getState().setUser({ ...user, [key]: next })
     try {
       await authService.updateProfile({ [key]: next })
@@ -95,120 +98,113 @@ export default function ProfilePage() {
 
   return (
     <div
-      className="no-scrollbar min-h-dvh overflow-auto lg:mx-auto lg:max-w-[640px]"
-      style={{ background: '#F5F5F8', padding: '52px 20px 110px', fontFamily: 'Poppins, sans-serif' }}
+      className="no-scrollbar min-h-dvh overflow-auto px-5 pb-28 pt-14 lg:px-9 lg:pb-10 lg:pt-9"
+      style={{ background: '#F5F5F8', fontFamily: 'Poppins, sans-serif' }}
     >
-      <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 28, color: '#15151A', letterSpacing: '-0.02em', marginBottom: 20 }}>
-        Perfil
-      </div>
+      <div className="mx-auto w-full lg:max-w-[1000px]">
+        <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 28, color: '#15151A', letterSpacing: '-0.02em', marginBottom: 20 }}>
+          Perfil
+        </div>
 
-      {/* User card */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: '#fff', borderRadius: 22, padding: 18, boxShadow: '0 2px 12px rgba(0,0,0,.04)' }}>
-        <div style={{
-          width: 62, height: 62, borderRadius: '50%', flexShrink: 0,
-          background: 'linear-gradient(135deg,#FFB199,#FF7A59)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#fff', fontWeight: 800, fontSize: 20,
-          border: '3px solid #fff', boxShadow: '0 3px 10px rgba(255,90,60,.3)',
-        }}>
-          {getInitials(user.name)}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 800, fontSize: 18, color: '#15151A' }}>{user.name}</div>
-          <div style={{ fontSize: 13, color: '#6B6B76', marginTop: 2 }}>{user.email}</div>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
-          <span style={{ padding: '5px 12px', borderRadius: 999, fontSize: 11, fontWeight: 800, background: planBadgeBg, color: planBadgeFg }}>
-            {planLabel}
-          </span>
-          <button
-            onClick={openEdit}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5,
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: '#FF5436', fontWeight: 700, fontSize: 12.5, padding: 0,
-            }}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-              <path d="M4 20h4L18.5 9.5a2.1 2.1 0 00-3-3L5 17v3z" stroke="#FF5436" strokeWidth="2" strokeLinejoin="round"/>
-            </svg>
-            Editar
-          </button>
-        </div>
-      </div>
-
-      {/* Pro upgrade card */}
-      {isFree ? (
-        <div style={{ marginTop: 16, borderRadius: 24, padding: 22, background: 'linear-gradient(140deg,#2A1A12,#4A2A18)', color: '#fff', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', right: -30, top: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,154,61,.18)' }} />
-          <div style={{ display: 'inline-block', background: 'linear-gradient(135deg,#FF5436,#FFB13D)', color: '#fff', fontSize: 11, fontWeight: 800, padding: '4px 12px', borderRadius: 999, position: 'relative' }}>
-            RACHEI PRO
+        {/* Card do usuário — largura toda */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: '#fff', borderRadius: 22, padding: 18, boxShadow: '0 2px 12px rgba(0,0,0,.04)' }}>
+          <div style={{
+            width: 62, height: 62, borderRadius: '50%', flexShrink: 0,
+            background: 'linear-gradient(135deg,#FFB199,#FF7A59)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#fff', fontWeight: 800, fontSize: 20,
+            border: '3px solid #fff', boxShadow: '0 3px 10px rgba(255,90,60,.3)',
+          }}>
+            {getInitials(user.name)}
           </div>
-          <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 21, marginTop: 14, position: 'relative' }}>
-            Desbloqueie tudo
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 800, fontSize: 18, color: '#15151A' }}>{user.name}</div>
+            <div style={{ fontSize: 13, color: '#6B6B76', marginTop: 2 }}>{user.email}</div>
           </div>
-          <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 9, position: 'relative' }}>
-            {PRO_FEATURES.map((feat) => (
-              <div key={feat} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5 }}>
-                <span style={{ color: '#FFC53D', fontWeight: 800 }}>✓</span>
-                <span style={{ opacity: 0.92 }}>{feat}</span>
-              </div>
-            ))}
-          </div>
-          <div style={{ marginTop: 18, background: '#fff', color: '#2A1A12', textAlign: 'center', padding: 14, borderRadius: 14, fontWeight: 800, fontSize: 15, cursor: 'pointer', position: 'relative' }}>
-            Assinar Pro · R$ 9,90/mês
-          </div>
-        </div>
-      ) : (
-        <div style={{ marginTop: 16, borderRadius: 24, padding: 22, background: 'linear-gradient(140deg,#2A1A12,#4A2A18)', color: '#fff', textAlign: 'center' }}>
-          <div style={{ fontSize: 34 }}>👑</div>
-          <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 20, marginTop: 8 }}>Você é Rachei Pro</div>
-          <div style={{ fontSize: 13, opacity: 0.85, marginTop: 6 }}>Grupos ilimitados, WhatsApp e mais.</div>
-        </div>
-      )}
-
-      {/* Security */}
-      <div style={{ fontFamily: 'Poppins', fontWeight: 700, fontSize: 15, color: '#15151A', margin: '24px 2px 12px' }}>
-        Segurança
-      </div>
-      <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 2px 10px rgba(0,0,0,.04)', padding: '16px 16px' }}>
-        <TwoFactorSection />
-      </div>
-
-      {/* Notifications */}
-      <div style={{ fontFamily: 'Poppins', fontWeight: 700, fontSize: 15, color: '#15151A', margin: '24px 2px 12px' }}>
-        Notificações
-      </div>
-      <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 2px 10px rgba(0,0,0,.04)', overflow: 'hidden' }}>
-        {TOGGLES.map((t, i) => {
-          const on = user[t.key]
-          return (
-            <div
-              key={t.key}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 12, padding: '15px 16px', cursor: 'pointer',
-                borderBottom: i < TOGGLES.length - 1 ? '1px solid #F2F2F6' : 'none',
-              }}
-              onClick={() => togglePref(t.key, !on)}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
+            <span style={{ padding: '5px 12px', borderRadius: 999, fontSize: 11, fontWeight: 800, background: planBadgeBg, color: planBadgeFg }}>
+              {planLabel}
+            </span>
+            <button
+              onClick={openEdit}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', color: '#FF5436', fontWeight: 700, fontSize: 12.5, padding: 0 }}
             >
-              <span style={{ fontSize: 18 }}>{t.icon}</span>
-              <span style={{ flex: 1, fontWeight: 600, fontSize: 14.5, color: '#1A1A1F' }}>{t.label}</span>
-              <Toggle on={on} onToggle={() => togglePref(t.key, !on)} label={t.label} />
-            </div>
-          )
-        })}
-      </div>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                <path d="M4 20h4L18.5 9.5a2.1 2.1 0 00-3-3L5 17v3z" stroke="#FF5436" strokeWidth="2" strokeLinejoin="round" />
+              </svg>
+              Editar
+            </button>
+          </div>
+        </div>
 
-      <button
-        type="button" onClick={handleLogout}
-        style={{ marginTop: 18, width: '100%', textAlign: 'center', color: '#E0431F', fontWeight: 700, fontSize: 14.5, padding: 14, cursor: 'pointer', background: 'none', border: 'none' }}
-      >
-        Sair da conta
-      </button>
+        {/* Desktop: 2 colunas · Mobile: empilhado */}
+        <div className="mt-4 lg:mt-5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5">
+          {/* Coluna esquerda: plano */}
+          <div>
+            {isFree ? (
+              <div style={{ borderRadius: 24, padding: 22, background: 'linear-gradient(140deg,#2A1A12,#4A2A18)', color: '#fff', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', right: -30, top: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,154,61,.18)' }} />
+                <div style={{ display: 'inline-block', background: 'linear-gradient(135deg,#FF5436,#FFB13D)', color: '#fff', fontSize: 11, fontWeight: 800, padding: '4px 12px', borderRadius: 999, position: 'relative' }}>RACHEI PRO</div>
+                <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 21, marginTop: 14, position: 'relative' }}>Desbloqueie tudo</div>
+                <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 9, position: 'relative' }}>
+                  {PRO_FEATURES.map((feat) => (
+                    <div key={feat} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5 }}>
+                      <span style={{ color: '#FFC53D', fontWeight: 800 }}>✓</span>
+                      <span style={{ opacity: 0.92 }}>{feat}</span>
+                    </div>
+                  ))}
+                </div>
+                <button style={{ marginTop: 18, width: '100%', background: '#fff', color: '#2A1A12', textAlign: 'center', padding: 14, borderRadius: 14, fontWeight: 800, fontSize: 15, cursor: 'pointer', border: 'none', position: 'relative', fontFamily: 'Poppins, sans-serif' }}>
+                  Assinar Pro · R$ 9,90/mês
+                </button>
+              </div>
+            ) : (
+              <div style={{ borderRadius: 24, padding: 22, background: 'linear-gradient(140deg,#2A1A12,#4A2A18)', color: '#fff', textAlign: 'center' }}>
+                <div style={{ fontSize: 34 }}>👑</div>
+                <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 20, marginTop: 8 }}>Você é Rachei Pro</div>
+                <div style={{ fontSize: 13, opacity: 0.85, marginTop: 6 }}>Grupos ilimitados, WhatsApp e mais.</div>
+              </div>
+            )}
+          </div>
+
+          {/* Coluna direita: segurança + notificações + sair */}
+          <div className="mt-6 lg:mt-0">
+            <div style={sectionTitle}>Segurança</div>
+            <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 2px 10px rgba(0,0,0,.04)', padding: '16px 16px' }}>
+              <TwoFactorSection />
+            </div>
+
+            <div style={{ ...sectionTitle, marginTop: 24 }}>Notificações</div>
+            <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 2px 10px rgba(0,0,0,.04)', overflow: 'hidden' }}>
+              {TOGGLES.map((t, i) => {
+                const on = user[t.key]
+                return (
+                  <div
+                    key={t.key}
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '15px 16px', cursor: 'pointer', borderBottom: i < TOGGLES.length - 1 ? '1px solid #F2F2F6' : 'none' }}
+                    onClick={() => togglePref(t.key, !on)}
+                  >
+                    <span style={{ fontSize: 18 }}>{t.icon}</span>
+                    <span style={{ flex: 1, fontWeight: 600, fontSize: 14.5, color: '#1A1A1F' }}>{t.label}</span>
+                    <Toggle on={on} onToggle={() => togglePref(t.key, !on)} label={t.label} />
+                  </div>
+                )
+              })}
+            </div>
+
+            <button
+              type="button" onClick={handleLogout}
+              style={{ marginTop: 18, width: '100%', textAlign: 'center', color: '#E0431F', fontWeight: 700, fontSize: 14.5, padding: 14, cursor: 'pointer', background: 'none', border: 'none' }}
+            >
+              Sair da conta
+            </button>
+          </div>
+        </div>
+      </div>
 
       <Toast message={toastMsg} />
 
-      {/* Edit name sheet */}
+      {/* Editar nome */}
       {editing && (
         <div
           onClick={() => { if (!savingName) setEditing(false) }}
@@ -219,9 +215,7 @@ export default function ProfilePage() {
             onClick={(e) => e.stopPropagation()}
             style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '24px 20px 40px', width: '100%', maxWidth: 480 }}
           >
-            <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 20, color: '#15151A', marginBottom: 16 }}>
-              Editar perfil
-            </div>
+            <div style={{ fontFamily: 'Poppins', fontWeight: 800, fontSize: 20, color: '#15151A', marginBottom: 16 }}>Editar perfil</div>
             <div style={{ fontSize: 12, fontWeight: 700, color: '#6B6B76', marginBottom: 8 }}>NOME</div>
             <input
               value={nameDraft}
@@ -229,24 +223,13 @@ export default function ProfilePage() {
               placeholder="Seu nome completo"
               maxLength={150}
               autoFocus
-              style={{
-                width: '100%', padding: '14px 16px', borderRadius: 14,
-                border: '2px solid #E8E8EF', fontSize: 15, color: '#1A1A1F', outline: 'none',
-                fontFamily: 'Poppins, sans-serif', boxSizing: 'border-box', marginBottom: 8,
-              }}
+              style={{ width: '100%', padding: '14px 16px', borderRadius: 14, border: '2px solid #E8E8EF', fontSize: 15, color: '#1A1A1F', outline: 'none', fontFamily: 'Poppins, sans-serif', boxSizing: 'border-box', marginBottom: 8 }}
             />
-            <div style={{ fontSize: 12, color: '#9A9AA4', marginBottom: 20 }}>
-              O e-mail não pode ser alterado por aqui.
-            </div>
+            <div style={{ fontSize: 12, color: '#9A9AA4', marginBottom: 20 }}>O e-mail não pode ser alterado por aqui.</div>
             <button
               onClick={saveName}
               disabled={savingName || !nameDraft.trim()}
-              style={{
-                width: '100%', padding: 15, borderRadius: 16, border: 'none',
-                cursor: savingName || !nameDraft.trim() ? 'not-allowed' : 'pointer',
-                background: savingName || !nameDraft.trim() ? '#EBEBEF' : 'linear-gradient(135deg,#FF5436,#FF8A3D)',
-                color: savingName || !nameDraft.trim() ? '#9A9AA4' : '#fff', fontWeight: 800, fontSize: 15.5,
-              }}
+              style={{ width: '100%', padding: 15, borderRadius: 16, border: 'none', cursor: savingName || !nameDraft.trim() ? 'not-allowed' : 'pointer', background: savingName || !nameDraft.trim() ? '#EBEBEF' : 'linear-gradient(135deg,#FF5436,#FF8A3D)', color: savingName || !nameDraft.trim() ? '#9A9AA4' : '#fff', fontWeight: 800, fontSize: 15.5, fontFamily: 'Poppins, sans-serif' }}
             >
               {savingName ? 'Salvando...' : 'Salvar'}
             </button>

@@ -118,7 +118,7 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
       </div>
 
       {error && (
-        <p style={{ background: '#FDECEC', color: '#E5484D', fontSize: 13.5, fontWeight: 600, padding: '11px 14px', borderRadius: 12, margin: 0 }}>
+        <p role="alert" style={{ background: '#FDECEC', color: '#E5484D', fontSize: 13.5, fontWeight: 600, padding: '11px 14px', borderRadius: 12, margin: 0 }}>
           {error}
         </p>
       )}

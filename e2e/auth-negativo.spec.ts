@@ -11,7 +11,7 @@ test('login com senha errada é rejeitado', async ({ page, request }) => {
   await page.getByRole('button', { name: 'Entrar' }).click()
 
   // Mostra o erro e permanece na tela de login — nunca chega ao dashboard.
-  await expect(page.locator('p.text-red-500')).toBeVisible()
+  await expect(page.getByRole('alert')).toBeVisible()
   await expect(page).toHaveURL(/\/login/)
   await expect(page.getByText('Seu saldo')).toHaveCount(0)
 })

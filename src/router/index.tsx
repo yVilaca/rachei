@@ -34,13 +34,29 @@ export const router = createBrowserRouter([
       { path: '/cadastro', element: <AuthPage mode="register" /> },
       { path: '/esqueci-senha', element: <ForgotPasswordPage /> },
       { path: '/verificar-2fa', element: <TwoFactorChallengePage /> },
-      // Cobrança pública — também centralizada no desktop (sem exigir login)
+      // Cobrança pública — foco central (sem exigir login)
       {
         element: <AppFrame />,
         children: [{ path: '/pagar/:token', element: <PaymentLinkPage /> }],
       },
 
-      // App autenticado — dentro da moldura central (responsivo no desktop)
+      // Telas principais — shell com sidebar (desktop) / bottom nav (mobile)
+      {
+        element: (
+          <PrivateRoute>
+            <AppShell />
+          </PrivateRoute>
+        ),
+        children: [
+          { path: '/dashboard', element: <DashboardPage /> },
+          { path: '/grupos', element: <GroupsPage /> },
+          { path: '/grupos/:id', element: <GroupPage /> },
+          { path: '/atividade', element: <ActivityPage /> },
+          { path: '/perfil', element: <ProfilePage /> },
+        ],
+      },
+
+      // Fluxos focados (detalhe/formulários) — foco central
       {
         element: (
           <PrivateRoute>
@@ -48,18 +64,6 @@ export const router = createBrowserRouter([
           </PrivateRoute>
         ),
         children: [
-          // Telas com bottom nav
-          {
-            element: <AppShell />,
-            children: [
-              { path: '/dashboard', element: <DashboardPage /> },
-              { path: '/grupos', element: <GroupsPage /> },
-              { path: '/grupos/:id', element: <GroupPage /> },
-              { path: '/atividade', element: <ActivityPage /> },
-              { path: '/perfil', element: <ProfilePage /> },
-            ],
-          },
-          // Telas sem bottom nav (fluxos)
           { path: '/verificar-telefone', element: <VerifyPhonePage /> },
           { path: '/grupos/:id/nova-divida', element: <NewDebtPage /> },
           { path: '/dividas/:id/editar', element: <EditDebtPage /> },

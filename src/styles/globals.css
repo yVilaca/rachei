@@ -48,7 +48,7 @@
    moldura central do app (mesma largura da coluna do AppFrame). */
 .rc-bottombar { position: fixed; bottom: 0; left: 0; right: 0; }
 @media (min-width: 1024px) {
-  .rc-bottombar { left: 50%; right: auto; width: 100%; max-width: 480px; transform: translateX(-50%); }
+  .rc-bottombar { left: 50%; right: auto; width: 100%; max-width: 560px; transform: translateX(-50%); }
   /* Folha dos modais alinhada à moldura central (a folha é o filho do overlay). */
   .rc-overlay > * { max-width: 480px !important; margin-inline: auto; }
 }
